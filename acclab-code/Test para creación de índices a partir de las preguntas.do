@@ -342,10 +342,7 @@ foreach b in `vulnerabilidad' {
 	capture recode `b'(2=0)
 }
 
-*Comentario Claudia: Creo que está mal generada la variable aux1. aux 1 tiene 273 valores únicamente que son diferentes de 0, y para los 273 existentes tiene valor 1
-
-
-gen aux1= d_1_1+d_1_2+d_1_3+d_1_4+d_1_5
+gen aux1_v= d_1_1+d_1_2+d_1_3+d_1_4+d_1_5
 
 replace d_2 = 0 if d_2 ==1
 replace d_2 = 0 if d_2 ==2
@@ -370,11 +367,11 @@ replace d_3 =1 if d_3==6
 replace d_3 =0 if d_3==7
 label drop d_3
 
-gen vulnerabilidad1= aux1+d_2+d_3
+gen vulnerabilidad1= aux1_v+d_2+d_3
 
 *Estandarizar
 
-egen zaux1= std (aux1)
+egen zaux1_v= std (aux1_v)
 egen zd2= std (d_2)
 egen zd3= std (d_3)
 
@@ -382,11 +379,11 @@ egen zd3= std (d_3)
 
 Preguntas a considerar: aux1 d_2 d_3 (construido a partir del árbol de variables)*/
 
-pwcorr aux1 d_2 d_3, sig star(.05) obs
+pwcorr zaux1_v d_2 d_3, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha aux1 d_2 d_3, std item generate (vulnerabilidad1_alpha)
+alpha zaux1_v d_2 d_3, std item generate (vulnerabilidad1_alpha)
 
 
 /*========================================================================================
