@@ -1,5 +1,5 @@
 use "../data/database_final_normalizada.dta"
-*La confianza interpersonal es condicionante de la confianza institucional
+*La confianza interpersonal es condicionante de la confianza institucional 
 pwcorr zconf_institucional zconf_interpersonal [w=fex], sig star(.05) obs
 pwcorr zconf_institucional_urb zconf_interpersonal_urb [w=fex], sig star(.05) obs
 pwcorr zconf_institucional_rur zconf_interpersonal_rur [w=fex], sig star(.05) obs
