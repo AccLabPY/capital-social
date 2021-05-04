@@ -1,7 +1,7 @@
 *Instalar complemento para exportar a word
 ssc install asdoc
 
-*Abrir archivo con datos normalizados porque esta versión contiene los datos diferenciados por zona urbana y rural
+*Abrir archivo con datos normalizados porque esta versión contiene los datos diferenciados por zona urbana y rural 
 use "../data/database_final_normalizada.dta"
 
 *Declarar ubicación del archivo que se creará
