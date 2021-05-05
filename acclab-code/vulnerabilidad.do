@@ -49,10 +49,9 @@ replace d_3 =2 if d_3==3
 replace d_3 =3 if d_3==4
 replace d_3 =2 if d_3==5
 replace d_3 =1 if d_3==6
-replace d_3 =0 if d_3==7
+replace d_3 =2 if d_3==7
 label drop d_3
 
-*generé un d_3_otro_num= 2 para todas las opciones de "otro-especificar". Hay que rever para cuando recalculemos
 
 *A7
 replace a_7=0 if a_7==1
@@ -63,17 +62,18 @@ replace a_7=4 if a_7==5
 replace a_7=5 if a_7==6
 replace a_7=2 if a_7==7
 replace a_7=2 if a_7==8
+replace a_7=0 if a_7==9
 label drop a_7
 
 *indice con suma directa
-gen vulnerabilidad1= aux_pca+d_2+d_3+d_3_otro_num+a_7
+gen vulnerabilidad1= aux_pca+d_2+d_3+a_7
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: aux1 d_2 d_3 (construido a partir del árbol de variables)*/
 
-pwcorr aux1_v d_2 d_3, sig star(.05) obs
+pwcorr aux_pca d_2 d_3 a_7, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha aux1_v d_2 d_3, std item generate (vulnerabilidad1_alpha)
+alpha aux_pca d_2 d_3 a_7, std item generate (vulnerabilidad1_alpha)
