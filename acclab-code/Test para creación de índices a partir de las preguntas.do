@@ -379,11 +379,19 @@ egen zd3= std (d_3)
 
 Preguntas a considerar: aux1 d_2 d_3 (construido a partir del árbol de variables)*/
 
+<<<<<<< HEAD
 pwcorr zaux1_v zd_2 zd_3, sig star(.05) obs
 
 *Alpha de Cronbach
 
 alpha zaux1_v zd_2 zd_3, std item generate (vulnerabilidad1_alpha)
+=======
+pwcorr zaux1_v d_2 d_3, sig star(.05) obs
+
+*Alpha de Cronbach
+
+alpha zaux1_v d_2 d_3, std item generate (vulnerabilidad1_alpha)
+>>>>>>> main
 
 
 /*========================================================================================
