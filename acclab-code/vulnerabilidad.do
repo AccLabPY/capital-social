@@ -1,4 +1,4 @@
-use "C:\Users\DELL\Dropbox\Claudia y Alberto\PNUD\Social ties\database_final.dta"
+use "../data/database_final_normalizada.dta"
 
 /*========================================================================================
  ÍNDICES DE VULNERABILIDAD
