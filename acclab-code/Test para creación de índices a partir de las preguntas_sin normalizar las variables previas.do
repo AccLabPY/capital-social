@@ -1,5 +1,5 @@
 **************Creación de índices agregados Capital Social**************
-
+cd "C:\Users\DELL\Dropbox\Claudia y Alberto\PNUD\Social ties"
 use "C:\Users\DELL\Dropbox\Claudia y Alberto\PNUD\Social ties\database_final.dta"
 
 /*========================================================================================
@@ -52,24 +52,19 @@ replace b3_2= 0 if b3_2==.
 
 g aux_cf3 = b3_1+b3_2
 
+*Índice con sumas
 g cs_filial= aux_cf1+aux_cf2+aux_cf3    // cs Filial
-
-*Estandarizar
-
-egen zaux_cf1= std (aux_cf1)
-egen zaux_cf2= std (aux_cf2)
-egen zaux_cf3= std (aux_cf3)
 
 
 /* Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: aux_cf1, aux_cf2, aux_cf3 (construido a partir del árbol de variables)*/
 
-pwcorr zaux_cf1 zaux_cf2 zaux_cf3, sig star(.05) obs
+pwcorr aux_cf1 aux_cf2 aux_cf3, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zaux_cf1 zaux_cf2 zaux_cf3, std item generate (cs_filial_alpha)
+alpha aux_cf1 aux_cf2 aux_cf3, std item generate (cs_filial_alpha)
 
 
 /* 2) Puntaje de capital social conectivo (〖cs〗_conectivo=[0…36]) 
@@ -112,24 +107,20 @@ replace b7_2= 0 if b7_2==.
 
 g aux_cc3 = b7_1+b7_2
 
+*índice con sumas
+
 g cs_conectivo= aux_cc1+aux_cc2+aux_cc3
-
-*Estandarizar
-
-egen zaux_cc1= std (aux_cc1)
-egen zaux_cc2= std (aux_cc2)
-egen zaux_cc3= std (aux_cc3)
 
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 *Preguntas a considerar: aux_cc1, aux_cc2, aux_cc3 (construido a partir del árbol de variables)*/
 
-pwcorr zaux_cc1 zaux_cc2 zaux_cc3, sig star(.05) obs
+pwcorr aux_cc1 aux_cc2 aux_cc3, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zaux_cc1 zaux_cc2 zaux_cc3, std item generate (cs_conectivo_alpha)
+alpha aux_cc1 aux_cc2 aux_cc3, std item generate (cs_conectivo_alpha)
 
 /* 3) 	Puntaje de capital social vinculante (〖cs〗_vinculante=[0…27]) 
 
@@ -204,24 +195,20 @@ gen aux_cv3 = b12_1+b12_2+b12_3+b12_4
 
 gen aux_cv4 = b11_1+b11_2+b11_3+b11_4
 
+*Índice con sumas
+
 gen cs_vinculante = aux_cv1+aux_cv2+aux_cv3+aux_cv4
-
-*Estandarizar
-
-egen zaux_cv1= std (aux_cv1)
-egen zaux_cv2= std (aux_cv2)
-egen zaux_cv3= std (aux_cv3)
 
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: aux_cv1, aux_cv2, aux_cv3 (construido a partir del árbol de variables)*/
 
-pwcorr zaux_cv1 zaux_cv2 zaux_cv3, sig star(.05) obs
+pwcorr aux_cv1 aux_cv2 aux_cv3, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zaux_cv1 zaux_cv2 zaux_cv3, std item generate (cs_vinculante_alpha)
+alpha aux_cv1 aux_cv2 aux_cv3, std item generate (cs_vinculante_alpha)
 
 /*========================================================================================
  ÍNDICES DE CONFIANZA
@@ -273,52 +260,37 @@ foreach a in `positivo' {
 label drop `a'
 	}
 
-**Confianza interpersonal**
+**índice de confianza interpersonal con suma directa**
 
 gen conf_interpersonal= c_1+c_2+c_3
-
-*Estandarizar
-
-egen zc_1= std (c_1)
-egen zc_2= std (c_2)
-egen zc_3= std (c_3)
 
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: c_1 c_2 c_3 (construido a partir del árbol de variables)*/
 
-pwcorr zc_1 zc_2 zc_3, sig star(.05) obs
+pwcorr c_1 c_2 c_3, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zc_1 zc_2 zc_3, std item generate (conf_interpersonal_alpha)
+alpha c_1 c_2 c_3, std item generate (conf_interpersonal_alpha1)
+alpha c_1 c_2 c_3, std asis item generate (conf_interpersonal_alpha2)
 
-**Confianza institucional**
+**Índice de confianza institucional sumas**
 
 gen conf_institucional= c_4+c_5+c_6+c_7+c_8+c_9+c_10+c_11+c_12
 
-*Estandarizar
-
-egen zc_4= std (c_4)
-egen zc_5= std (c_5)
-egen zc_6= std (c_6)
-egen zc_7= std (c_7)
-egen zc_8= std (c_8)
-egen zc_9= std (c_9)
-egen zc_10= std (c_10)
-egen zc_11= std (c_11)
-egen zc_12= std (c_12)
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12 (construido a partir del árbol de variables)*/
 
-pwcorr zc_4 zc_5 zc_6 zc_7 zc_8 zc_9 zc_10 zc_11 zc_12, sig star(.05) obs
+pwcorr c_4 c_5 c_6 c_7 c_8 c_9 c_10 c_11 c_12, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zc_4 zc_5 zc_6 zc_7 zc_8 zc_9 zc_10 zc_11 zc_12, std item generate (conf_inst_alpha)
+alpha c_4 c_5 c_6 c_7 c_8 c_9 c_10 c_11 c_12, std item generate (conf_inst_alpha1)
+alpha c_4 c_5 c_6 c_7 c_8 c_9 c_10 c_11 c_12, std asis item generate (conf_inst_alpha2)
 
 /*========================================================================================
  ÍNDICES DE VULNERABILIDAD
@@ -344,55 +316,59 @@ foreach b in `vulnerabilidad' {
 
 *gen aux1_v= d_1_1+d_1_2+d_1_3+d_1_4+d_1_5
 pca d_1_1 d_1_2 d_1_3 d_1_4 d_1_5
+. screeplot
+gen aux_pca= 0.4291*(d_1_1)+0.3105*(d_1_2)+0.4649*(d_1_3)+0.4951*(d_1_4)+0.5081*(d_1_5)
 
+*D2
 replace d_2 = 0 if d_2 ==1
 replace d_2 = 0 if d_2 ==2
-replace d_2 = 0 if d_2 ==3
-replace d_2 = 0 if d_2 ==4
-replace d_2 = 1 if d_2 ==5
-replace d_2 = 1 if d_2 ==6
-replace d_2 = 2 if d_2 ==7
-replace d_2 = 3 if d_2 ==8
-replace d_2 = 4 if d_2 ==9
-replace d_2 = 5 if d_2 ==10
-replace d_2 = 5 if d_2 ==11
+replace d_2 = 1 if d_2 ==3
+replace d_2 = 1 if d_2 ==4
+replace d_2 = 2 if d_2 ==5
+replace d_2 = 3 if d_2 ==6
+replace d_2 = 4 if d_2 ==7
+replace d_2 = 4 if d_2 ==8
+replace d_2 = 5 if d_2 ==9
+replace d_2 = 6 if d_2 ==10
+replace d_2 = 6 if d_2 ==11
 replace d_2 = 0 if d_2 ==12
 label drop d_2
 
+*D3
 replace d_3 =0 if d_3==1
 replace d_3 =2 if d_3==2
 replace d_3 =2 if d_3==3
 replace d_3 =3 if d_3==4
 replace d_3 =2 if d_3==5
 replace d_3 =1 if d_3==6
-replace d_3 =0 if d_3==7
+replace d_3 =2 if d_3==7
 label drop d_3
 
-gen vulnerabilidad1= aux1_v+d_2+d_3
 
-*Estandarizar
+*A7
+replace a_7=0 if a_7==1
+replace a_7=3 if a_7==2
+replace a_7=2 if a_7==3
+replace a_7=1 if a_7==4
+replace a_7=4 if a_7==5
+replace a_7=5 if a_7==6
+replace a_7=2 if a_7==7
+replace a_7=2 if a_7==8
+replace a_7=0 if a_7==9
+label drop a_7
 
-egen zaux1_v= std (aux1_v)
-egen zd2= std (d_2)
-egen zd3= std (d_3)
+*indice con suma directa
+gen vulnerabilidad1= aux_pca+d_2+d_3+a_7
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: aux1 d_2 d_3 (construido a partir del árbol de variables)*/
 
-<<<<<<< HEAD
-pwcorr zaux1_v zd_2 zd_3, sig star(.05) obs
+pwcorr aux_pca d_2 d_3 a_7, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zaux1_v zd_2 zd_3, std item generate (vulnerabilidad1_alpha)
-=======
-pwcorr zaux1_v d_2 d_3, sig star(.05) obs
-
-*Alpha de Cronbach
-
-alpha zaux1_v d_2 d_3, std item generate (vulnerabilidad1_alpha)
->>>>>>> main
+alpha aux_pca d_2 d_3 a_7, std item generate (vulnerabilidad1_alpha)
 
 
 /*========================================================================================
@@ -416,24 +392,18 @@ a) Puntaje de acción colectiva para acción comunitaria (〖ac〗_comunitaria=[
 
 gen aux_colect1 = e_2 * 2
 
+*indice con suma directa
 gen ac_comunitaria = e_1 + aux_colect1
-
-*Estandarizar
-
-egen zaux_colect1= std (aux_colect1)
-egen ze1= std (e_1)
-
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: aux_colect1 e_1 (construido a partir del árbol de variables)*/
 
-pwcorr zaux_colect1 ze_1, sig star(.05) obs
+pwcorr aux_colect1 e_1, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zaux_colect1 ze_1, std item generate (ac_comunitaria_colectiva_alpha)
-
+alpha aux_colect1 e_1, std item generate (ac_comunitaria_alpha)
 
 
 /*	Puntaje de acción colectiva para acción comunitaria asociada a activos colectivos (〖ac〗_(comunitaria_colectiva)=[0…18])
@@ -464,22 +434,19 @@ foreach d in `tiempo' {
 	
 g aux_acc_activos2 = f_3+f_6+ f_15
 
-gen ac_comunitaria_colectiva = aux_acc_activos1 + aux_acc_activos2
+*indice con suma directa
+gen ac_activos = aux_acc_activos1 + aux_acc_activos2
 
-*Estandarizar
-
-egen zaux_acc_activos1= std (aux_acc_activos1)
-egen zaux_acc_activos2= std (aux_acc_activos2)
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: acc_activos_1 acc_activos_2 (construido a partir del árbol de variables)*/
 
-pwcorr zaux_acc_activos1 zaux_acc_activos2, sig star(.05) obs
+pwcorr aux_acc_activos1 aux_acc_activos2, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zaux_acc_activos1 zaux_acc_activos2, std item generate (ac_activos_alpha)
+alpha aux_acc_activos1 aux_acc_activos2, std item generate (ac_activos_alpha)
 
 /*		Puntaje de acción colectiva para demandas cívicas (〖ac〗_demanda=[0…3])
 
@@ -497,23 +464,20 @@ capture recode e_4 (3=0)
 capture recode e_4 (2=0)
 
 g aux_demanda1 = e_4 *2
-	
+
+*indice con suma directa
 gen ac_demanda= e_3 + aux_demanda1
 
-*Estandarizar
-
-egen zaux_demanda1= std (aux_demanda1)
-egen ze_3= std (e_3)
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: demanda_1 demanda_2 (construido a partir del árbol de variables)*/
 
-pwcorr zaux_demanda1 ze_3, sig star(.05) obs
+pwcorr aux_demanda1 e_3, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zaux_demanda1 ze_3, std item generate (ac_demanda_alpha)
+alpha aux_demanda1 e_3, std item generate (ac_demanda_alpha)
 
 	
 /* 4.Puntaje de Activos Colectivos l ( 1 VARIABLE)
@@ -563,23 +527,19 @@ replace aux_activos2=0 if aux_activos2==.
 gen aux_activos3= f_19 if f_18 ==1
 replace aux_activos3=0 if aux_activos3==.
 
+*indice con suma directa
 g commons= aux_activos1+aux_activos2+aux_activos3
 
-*Estandarizar
-
-egen zaux_activos1= std (aux_activos1)
-egen zaux_activos2= std (aux_activos2)
-egen zaux_activos3= std (aux_activos3)
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: activos_1 activos_2 (construido a partir del árbol de variables)*/
 
-pwcorr zaux_activos1 zaux_activos2 zaux_activos3, sig star(.05) obs
+pwcorr aux_activos1 aux_activos2 aux_activos3, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha zaux_activos1 zaux_activos2 zaux_activos3, std item generate (activos_alpha)
+alpha aux_activos1 aux_activos2 aux_activos3, std item generate (commons_alpha)
 
 /*========================================================================================
  ÍNDICES DE RESPUESTA INSTITUCIONAL
@@ -601,20 +561,69 @@ replace e_7_1 = 0 if e_7_1 ==. | e_7_1==99
 replace e_8 = 1 if e_8 != 99 
 replace e_8 = 0 if e_8 ==. | e_8 ==99
 
+
+*Índices con sumas directas
 g R_publica= e_7+e_7_1+e_8
-
-*Estandarizar
-
-egen ze_7= std (e_7)
-egen ze_7_1= std (e_7_1)
-egen ze_8= std (e_8)
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: e_7 e_7_1 e_8 (construido a partir del árbol de variables)*/
 
-pwcorr ze_7 ze_7_1 ze_8, sig star(.05) obs
+pwcorr e_7 e_7_1 e_8, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha ze_7 ze_7_1 ze_8, std item generate (r_publica_alpha)
+alpha e_7 e_7_1 e_8, std item generate (r_publica_alpha)
+
+/*	Puntaje de respuesta institucional civil (R_civil=[0…1])
+
+a)	Sumar 1 puntos por cada Sí de respuesta a las preguntas E9 */
+
+capture recode e_9 (3=0)
+capture recode e_9 (2=0)
+
+gen R_civil= e_9
+
+/* 	Puntaje de respuesta institucional privada (R_privada=[0…1]) 
+
+a.	Sumar 1 puntos por cada Sí de respuesta a las preguntas E10 */
+
+
+capture recode e_10 (3=0)
+capture recode e_10 (2=0)
+
+g R_privada= e_10 
+
+
+/*========================================================================================
+ ÍNDICE DE VULNERABILIDAD PRODUCIDA POR LA PANDEMIA
+==========================================================================================*/
+*Este índice es la diferencia entre A7 y A4
+*A4
+replace a_4=0 if a_4==1
+replace a_4=3 if a_4==2
+replace a_4=2 if a_4==3
+replace a_4=1 if a_4==4
+replace a_4=4 if a_4==5
+replace a_4=5 if a_4==6
+replace a_4=2 if a_4==7
+replace a_4=2 if a_4==8
+replace a_4=0 if a_4==9
+label drop a_4
+
+*indice con suma directa
+gen vulnerabilizados= a_4-a_7
+
+/*========================================================================================
+ CORRELACIONES
+==========================================================================================*/
+asdoc pwcorr cs_filial cs_conectivo cs_vinculante conf_interpersonal conf_institucional vulnerabilidad1 ac_comunitaria ac_activos ac_demanda commons R_publica R_privada R_civil vulnerabilizados [w=fex], sig star(.05) obs
+
+asdoc pwcorr cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha conf_interpersonal_alpha2 conf_inst_alpha2 vulnerabilidad1_alpha ac_comunitaria_alpha ac_activos_alpha ac_demanda_alpha commons_alpha r_publica_alpha R_privada R_civil vulnerabilizados [w=fex], sig star(.05) obs
+
+asdoc pwcorr cs_filial cs_conectivo cs_vinculante conf_interpersonal conf_institucional vulnerabilidad1 ac_comunitaria ac_activos ac_demanda commons R_publica R_privada R_civil [w=fex], sig star(.05) obs
+
+asdoc pwcorr cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha conf_interpersonal_alpha2 conf_inst_alpha2 vulnerabilidad1_alpha ac_comunitaria_alpha ac_activos_alpha ac_demanda_alpha commons_alpha r_publica_alpha R_privada R_civil [w=fex], sig star(.05) obs
+
+
+
