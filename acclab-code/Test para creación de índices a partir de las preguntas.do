@@ -1,6 +1,6 @@
 **************Creación de índices agregados Capital Social**************
 
-use "C:\Users\DELL\Dropbox\Claudia y Alberto\PNUD\Social ties\database_final.dta"
+use "C:\Users\DELL\Dropbox\Compartida\PNUD\Social ties\database_final.dta"
 
 /*========================================================================================
  ÍNDICES DE CAPITAL SOCIAL
