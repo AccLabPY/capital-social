@@ -1,6 +1,6 @@
 **************Creación de índices agregados Capital Social**************
 
-use "../data/database_final_normalizada.dta""
+use "../data/database_final_normalizada.dta"
 
 /*========================================================================================
  ÍNDICES DE CAPITAL SOCIAL
