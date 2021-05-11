@@ -1,5 +1,5 @@
 **************Creación de índices agregados Capital Social**************
-cd "../data/"
+cd "../data"
 use "database_final.dta"
 
 /*========================================================================================
