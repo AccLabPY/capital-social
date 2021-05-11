@@ -38,7 +38,8 @@ foreach X in `var' {
 gen aux_cf1 = b_1_1+ b_1_2+ b_1_3+ b_1_4+ b_1_5+ b_1_6+ b_1_7 + b_4
 
 gen aux_cf2 = (b_2_1+ b_2_2+ b_2_3+ b_2_4+ b_2_5+ b_2_6+ b_2_7)
-replace b_3_1=. if b_3_1==0
+
+/* replace b_3_1=. if b_3_1==0
 
 xtile b3_1= b_3_1, nq(4)
 
@@ -50,22 +51,30 @@ xtile b3_2= b_3_2, nq(4)
 
 replace b3_2= 0 if b3_2==.
 
-g aux_cf3 = b3_1+b3_2
+replace b_3=. if b_3==0
+g aux_cf3=b3_1+b3_2*/
+
+xtile b3_q= b_3, nq(4)
+
+replace b3_q= 0 if b3_q==.
 
 *Índice con sumas
-g cs_filial= aux_cf1+aux_cf2+aux_cf3    // cs Filial
+*g cs_filial= aux_cf1+aux_cf2+aux_cf3    // cs Filial
+g cs_filial= aux_cf1+aux_cf2+b3_q		// cs Filial prueba con b_3
 
 
 /* Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 Preguntas a considerar: aux_cf1, aux_cf2, aux_cf3 (construido a partir del árbol de variables)*/
 
-pwcorr aux_cf1 aux_cf2 aux_cf3, sig star(.05) obs
+*pwcorr aux_cf1 aux_cf2 aux_cf3, sig star(.05) obs
+pwcorr aux_cf1 aux_cf2 b3_q, sig star(.05) obs
+
 
 *Alpha de Cronbach
 
-alpha aux_cf1 aux_cf2 aux_cf3, std item generate (cs_filial_alpha)
-
+*alpha aux_cf1 aux_cf2 aux_cf3, std item generate (cs_filial_alpha)
+alpha aux_cf1 aux_cf2 b3_q, std item generate (cs_filial_alpha)
 
 /* 2) Puntaje de capital social conectivo (〖cs〗_conectivo=[0…36]) 
 
@@ -93,7 +102,7 @@ gen aux_cc1 = b_5_1 + b_5_2 + b_5_3 + b_5_4 + b_5_5 + b_5_5_1 + b_5_6 + b_5_7 + 
 
 gen aux_cc2 = (b_6_1 + b_6_2 + b_6_3 + b_6_4 + b_6_5 + b_6_5_1 + b_6_6 + b_6_7 + b_6_7_1) 
 
-replace b_7_1=. if b_7_1==0
+/*replace b_7_1=. if b_7_1==0
 
 xtile b7_1= b_7_1, nq(4)
 
@@ -105,22 +114,28 @@ xtile b7_2= b_7_2, nq(4)
 
 replace b7_2= 0 if b7_2==.
 
-g aux_cc3 = b7_1+b7_2
+g aux_cc3 = b7_1+b7_2*/
+
+xtile b7_q= b_7, nq(4)
+
+replace b7_q= 0 if b7_q==.
 
 *índice con sumas
 
-g cs_conectivo= aux_cc1+aux_cc2+aux_cc3
+*g cs_conectivo= aux_cc1+aux_cc2+aux_cc3
 
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
 
 *Preguntas a considerar: aux_cc1, aux_cc2, aux_cc3 (construido a partir del árbol de variables)*/
 
-pwcorr aux_cc1 aux_cc2 aux_cc3, sig star(.05) obs
+*pwcorr aux_cc1 aux_cc2 aux_cc3, sig star(.05) obs
+pwcorr aux_cc1 aux_cc2 b7_q, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha aux_cc1 aux_cc2 aux_cc3, std item generate (cs_conectivo_alpha)
+*alpha aux_cc1 aux_cc2 aux_cc3, std item generate (cs_conectivo_alpha)
+alpha aux_cc1 aux_cc2 b7_q, std item generate (cs_conectivo_alpha)
 
 /* 3) 	Puntaje de capital social vinculante (〖cs〗_vinculante=[0…27]) 
 
