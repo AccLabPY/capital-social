@@ -35,9 +35,11 @@ foreach X in `var' {
 	capture recode `X'(2=0)
 }
 
-gen aux_cf1 = b_1_1+ b_1_2+ b_1_3+ b_1_4+ b_1_5+ b_1_6+ b_1_7 + b_4
+gen aux_cf1 = b_1_1+ b_1_2+ b_1_3+ b_1_4+ b_1_5+ b_1_6+ b_1_7 
 
-gen aux_cf2 = (b_2_1+ b_2_2+ b_2_3+ b_2_4+ b_2_5+ b_2_6+ b_2_7)
+gen aux_cf2 = (b_2_1+ b_2_2+ b_2_3+ b_2_4+ b_2_5+ b_2_6+ b_2_7)* 2
+
+gen aux_cf4= b_4
 
 /* replace b_3_1=. if b_3_1==0
 
@@ -54,27 +56,27 @@ replace b3_2= 0 if b3_2==.
 replace b_3=. if b_3==0
 g aux_cf3=b3_1+b3_2*/
 
+replace b_3=. if b_3==0
+
 xtile b3_q= b_3, nq(4)
 
 replace b3_q= 0 if b3_q==.
 
 *Índice con sumas
 *g cs_filial= aux_cf1+aux_cf2+aux_cf3    // cs Filial
-g cs_filial= aux_cf1+aux_cf2+b3_q		// cs Filial prueba con b_3
+g cs_filial= aux_cf1+aux_cf2+b3_q + aux_cf4		// cs Filial prueba con b_3
 
 
-/* Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
-
-Preguntas a considerar: aux_cf1, aux_cf2, aux_cf3 (construido a partir del árbol de variables)*/
+/* Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
 *pwcorr aux_cf1 aux_cf2 aux_cf3, sig star(.05) obs
-pwcorr aux_cf1 aux_cf2 b3_q, sig star(.05) obs
+pwcorr aux_cf1 aux_cf2 b3_q aux_cf4, sig star(.05) obs
 
 
 *Alpha de Cronbach
 
 *alpha aux_cf1 aux_cf2 aux_cf3, std item generate (cs_filial_alpha)
-alpha aux_cf1 aux_cf2 b3_q, std item generate (cs_filial_alpha)
+alpha aux_cf1 aux_cf2 b3_q aux_cf4, std item generate (cs_filial_alpha)
 
 /* 2) Puntaje de capital social conectivo (〖cs〗_conectivo=[0…36]) 
 
@@ -98,9 +100,11 @@ foreach X in `var' {
 	capture recode `X'(2=0)
 }
 
-gen aux_cc1 = b_5_1 + b_5_2 + b_5_3 + b_5_4 + b_5_5 + b_5_5_1 + b_5_6 + b_5_7 + b_5_7_1 + b_8
+gen aux_cc1 = b_5_1 + b_5_2 + b_5_3 + b_5_4 + b_5_5 + b_5_5_1 + b_5_6 + b_5_7 + b_5_7_1 
 
-gen aux_cc2 = (b_6_1 + b_6_2 + b_6_3 + b_6_4 + b_6_5 + b_6_5_1 + b_6_6 + b_6_7 + b_6_7_1) 
+gen aux_cc2 = (b_6_1 + b_6_2 + b_6_3 + b_6_4 + b_6_5 + b_6_5_1 + b_6_6 + b_6_7 + b_6_7_1)*2 
+
+gen aux_cc4= b_8
 
 /*replace b_7_1=. if b_7_1==0
 
@@ -116,26 +120,26 @@ replace b7_2= 0 if b7_2==.
 
 g aux_cc3 = b7_1+b7_2*/
 
+replace b_7=. if b_7==0
+
 xtile b7_q= b_7, nq(4)
 
 replace b7_q= 0 if b7_q==.
 
 *índice con sumas
 
-*g cs_conectivo= aux_cc1+aux_cc2+aux_cc3
+g cs_conectivo= aux_cc1+aux_cc2+aux_cc4+b7_q
 
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
-
-*Preguntas a considerar: aux_cc1, aux_cc2, aux_cc3 (construido a partir del árbol de variables)*/
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
 *pwcorr aux_cc1 aux_cc2 aux_cc3, sig star(.05) obs
-pwcorr aux_cc1 aux_cc2 b7_q, sig star(.05) obs
+pwcorr aux_cc1 aux_cc2 aux_cc4 b7_q, sig star(.05) obs
 
 *Alpha de Cronbach
 
 *alpha aux_cc1 aux_cc2 aux_cc3, std item generate (cs_conectivo_alpha)
-alpha aux_cc1 aux_cc2 b7_q, std item generate (cs_conectivo_alpha)
+alpha aux_cc1 aux_cc2 aux_cc4 b7_q, std item generate (cs_conectivo_alpha)
 
 /* 3) 	Puntaje de capital social vinculante (〖cs〗_vinculante=[0…27]) 
 
@@ -164,7 +168,7 @@ foreach X in `var' {
 
 gen aux_cv1 = b_9
 
-gen aux_cv2 = b_10 
+gen aux_cv2 = 2*(b_10)
 replace aux_cv2=0 if aux_cv2==.
 
 
@@ -215,15 +219,13 @@ gen aux_cv4 = b11_1+b11_2+b11_3+b11_4
 gen cs_vinculante = aux_cv1+aux_cv2+aux_cv3+aux_cv4
 
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
-Preguntas a considerar: aux_cv1, aux_cv2, aux_cv3 (construido a partir del árbol de variables)*/
-
-pwcorr aux_cv1 aux_cv2 aux_cv3, sig star(.05) obs
+pwcorr aux_cv1 aux_cv2 aux_cv3 aux_cv4, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha aux_cv1 aux_cv2 aux_cv3, std item generate (cs_vinculante_alpha)
+alpha aux_cv1 aux_cv2 aux_cv3 aux_cv4, std item generate (cs_vinculante_alpha)
 
 /*========================================================================================
  ÍNDICES DE CONFIANZA
@@ -280,9 +282,7 @@ label drop `a'
 gen conf_interpersonal= c_1+c_2+c_3
 
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
-
-Preguntas a considerar: c_1 c_2 c_3 (construido a partir del árbol de variables)*/
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
 pwcorr c_1 c_2 c_3, sig star(.05) obs
 
@@ -296,9 +296,7 @@ alpha c_1 c_2 c_3, std asis item generate (conf_interpersonal_alpha2)
 gen conf_institucional= c_4+c_5+c_6+c_7+c_8+c_9+c_10+c_11+c_12
 
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
-
-Preguntas a considerar: c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12 (construido a partir del árbol de variables)*/
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
 pwcorr c_4 c_5 c_6 c_7 c_8 c_9 c_10 c_11 c_12, sig star(.05) obs
 
@@ -375,15 +373,23 @@ label drop a_7
 *indice con suma directa
 gen vulnerabilidad1= aux_pca+d_2+d_3+a_7
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
-
-Preguntas a considerar: aux1 d_2 d_3 (construido a partir del árbol de variables)*/
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
 pwcorr aux_pca d_2 d_3 a_7, sig star(.05) obs
 
 *Alpha de Cronbach
 
 alpha aux_pca d_2 d_3 a_7, std item generate (vulnerabilidad1_alpha)
+
+/*Hacer una matriz de correlación entre todas las variables de vulnerabilidad según Galeano Monti (Pearson Chi-square test)
+
+Preguntas a considerar: aux1 d_2 d_3 (construido a partir del árbol de variables)*/
+
+pwcorr aux_pca d_2 d_3, sig star(.05) obs
+
+*Alpha de Cronbach
+
+alpha aux_pca d_2 d_3, std item generate (galeano_monti)
 
 
 /*========================================================================================
@@ -410,9 +416,7 @@ gen aux_colect1 = e_2 * 2
 *indice con suma directa
 gen ac_comunitaria = e_1 + aux_colect1
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
-
-Preguntas a considerar: aux_colect1 e_1 (construido a partir del árbol de variables)*/
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
 pwcorr aux_colect1 e_1, sig star(.05) obs
 
@@ -453,15 +457,13 @@ g aux_acc_activos2 = f_3+f_6+ f_15
 gen ac_activos = aux_acc_activos1 + aux_acc_activos2
 
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
-Preguntas a considerar: acc_activos_1 acc_activos_2 (construido a partir del árbol de variables)*/
-
-pwcorr aux_acc_activos1 aux_acc_activos2, sig star(.05) obs
+pwcorr f_2 f_3 f_4 f_5 f_6 f_9 f_13 f_14 f_15, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha aux_acc_activos1 aux_acc_activos2, std item generate (ac_activos_alpha)
+alpha f_2 f_3 f_4 f_5 f_6 f_9 f_13 f_14 f_15, std item generate (ac_activos_alpha)
 
 /*		Puntaje de acción colectiva para demandas cívicas (〖ac〗_demanda=[0…3])
 
@@ -484,9 +486,7 @@ g aux_demanda1 = e_4 *2
 gen ac_demanda= e_3 + aux_demanda1
 
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
-
-Preguntas a considerar: demanda_1 demanda_2 (construido a partir del árbol de variables)*/
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
 pwcorr aux_demanda1 e_3, sig star(.05) obs
 
@@ -546,9 +546,8 @@ replace aux_activos3=0 if aux_activos3==.
 g commons= aux_activos1+aux_activos2+aux_activos3
 
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
-
-Preguntas a considerar: activos_1 activos_2 (construido a partir del árbol de variables)*/
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/ 
+**CHEQUEAR UNA MEJOR MANERA DE CALCULAR LA CONSISTENCIA DE ESTE INDICE, POR AHORA ESTÁ EN BASE A LOS AUXILIARES Y NO LAS PREGUNTAS**
 
 pwcorr aux_activos1 aux_activos2 aux_activos3, sig star(.05) obs
 
@@ -580,9 +579,7 @@ replace e_8 = 0 if e_8 ==. | e_8 ==99
 *Índices con sumas directas
 g R_publica= e_7+e_7_1+e_8
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
-
-Preguntas a considerar: e_7 e_7_1 e_8 (construido a partir del árbol de variables)*/
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
 pwcorr e_7 e_7_1 e_8, sig star(.05) obs
 
@@ -626,7 +623,7 @@ replace a_4=2 if a_4==8
 replace a_4=0 if a_4==9
 label drop a_4
 
-*indice con suma directa
+*Índice
 gen vulnerabilizados= a_4-a_7
 
 /*========================================================================================
@@ -636,9 +633,9 @@ asdoc pwcorr cs_filial cs_conectivo cs_vinculante conf_interpersonal conf_instit
 
 asdoc pwcorr cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha conf_interpersonal_alpha2 conf_inst_alpha2 vulnerabilidad1_alpha ac_comunitaria_alpha ac_activos_alpha ac_demanda_alpha commons_alpha r_publica_alpha R_privada R_civil vulnerabilizados [w=fex], sig star(.05) obs
 
-asdoc pwcorr cs_filial cs_conectivo cs_vinculante conf_interpersonal conf_institucional vulnerabilidad1 ac_comunitaria ac_activos ac_demanda commons R_publica R_privada R_civil [w=fex], sig star(.05) obs
+*asdoc pwcorr cs_filial cs_conectivo cs_vinculante conf_interpersonal conf_institucional vulnerabilidad1 ac_comunitaria ac_activos ac_demanda commons R_publica R_privada R_civil [w=fex], sig star(.05) obs
 
-asdoc pwcorr cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha conf_interpersonal_alpha2 conf_inst_alpha2 vulnerabilidad1_alpha ac_comunitaria_alpha ac_activos_alpha ac_demanda_alpha commons_alpha r_publica_alpha R_privada R_civil [w=fex], sig star(.05) obs
+*asdoc pwcorr cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha conf_interpersonal_alpha2 conf_inst_alpha2 vulnerabilidad1_alpha ac_comunitaria_alpha ac_activos_alpha ac_demanda_alpha commons_alpha r_publica_alpha R_privada R_civil [w=fex], sig star(.05) obs
 
 
 
