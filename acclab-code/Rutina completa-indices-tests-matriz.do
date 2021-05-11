@@ -168,31 +168,28 @@ foreach X in `var' {
 
 gen aux_cv1 = b_9
 
-gen aux_cv2 = 2*(b_10)
+gen aux_cv2 = b_10 * 2
 replace aux_cv2=0 if aux_cv2==.
-
 
 replace b_12_1= . if b_12_1==0
 xtile b12_1= b_12_1, nq(4)
 replace b12_1= 0 if b12_1==.
-replace b12_1=b12_1
-
+replace b12_1=b12_1*2
 
 replace b_12_2= . if b_12_2==0
 xtile b12_2= b_12_2, nq(4)
 replace b12_2= 0 if b12_2==.
-replace b12_2=b12_2
+replace b12_2=b12_2*2
 
 replace b_12_3= . if b_12_3==0
 xtile b12_3= b_12_3, nq(4)
 replace b12_3= 0 if b12_3==.
-replace b12_3=b12_3
+replace b12_3=b12_3*2
 
 replace b_12_4= . if b_12_4==0
 xtile b12_4= b_12_4, nq(4)
 replace b12_4= 0 if b12_4==.
-replace b12_4=b12_4
-
+replace b12_4=b12_4*2
 
 replace b_11_1= . if b_11_1==0
 xtile b11_1= b_11_1, nq(4)
@@ -372,6 +369,7 @@ label drop a_7
 
 *indice con suma directa
 gen vulnerabilidad1= aux_pca+d_2+d_3+a_7
+gen vulnerabilidad_galeano_monti=aux_pca+d_2+d_3
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
 
@@ -389,7 +387,7 @@ pwcorr aux_pca d_2 d_3, sig star(.05) obs
 
 *Alpha de Cronbach
 
-alpha aux_pca d_2 d_3, std item generate (galeano_monti)
+alpha aux_pca d_2 d_3, std item generate (galeano_monti_alpha)
 
 
 /*========================================================================================
@@ -579,7 +577,9 @@ replace e_8 = 0 if e_8 ==. | e_8 ==99
 *Índices con sumas directas
 g R_publica= e_7+e_7_1+e_8
 
-/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/
+/*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)
+
+Preguntas a considerar: e_7 e_7_1 e_8 (construido a partir del árbol de variables)*/
 
 pwcorr e_7 e_7_1 e_8, sig star(.05) obs
 
@@ -638,4 +638,98 @@ asdoc pwcorr cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha conf_interpe
 *asdoc pwcorr cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha conf_interpersonal_alpha2 conf_inst_alpha2 vulnerabilidad1_alpha ac_comunitaria_alpha ac_activos_alpha ac_demanda_alpha commons_alpha r_publica_alpha R_privada R_civil [w=fex], sig star(.05) obs
 
 
+/*========================================================================================
+ ESTADÍSTICAS DESCRIPTIVAS
+==========================================================================================*/
+*Sexo
+asdoc tab a_1
+
+*Edad por sexo
+sum a_2 if a_1==1 [w=fex]
+sum a_2 if a_1==2 [w=fex]
+
+*Capital social (índice sumas)
+sum cs_filial cs_conectivo cs_vinculante [w=fex]
+sum cs_filial cs_conectivo cs_vinculante if zona==1 [w=fex]
+sum cs_filial cs_conectivo cs_vinculante if zona==2 [w=fex]
+
+
+*Capital social (índice generate)
+sum cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha [w=fex]
+sum cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha if zona==1 [w=fex]
+sum cs_filial_alpha cs_conectivo_alpha cs_vinculante_alpha if zona==2 [w=fex]
+
+
+*Confianza (índice sumas)
+sum conf_interpersonal conf_institucional [w=fex]
+sum conf_interpersonal conf_institucional if zona==1 [w=fex]
+sum conf_interpersonal conf_institucional if zona==2 [w=fex]
+
+*Confianza (índice generate)
+sum conf_interpersonal conf_institucional [w=fex]
+sum conf_interpersonal conf_institucional if zona==1 [w=fex]
+sum conf_interpersonal conf_institucional if zona==2 [w=fex]
+
+
+*Vulnerabilidad Galeano Monti (índice sumas)
+sum vulnerabilidad_galeano_monti [w=fex]
+sum vulnerabilidad_galeano_monti if zona==1 [w=fex]
+sum vulnerabilidad_galeano_monti if zona==2 [w=fex]
+sum vulnerabilidad_galeano_monti if a_1==1 [w=fex]
+sum vulnerabilidad_galeano_monti if a_1==2 [w=fex]
+
+*Vulnerabilidad Galeano Monti (índice generate)
+sum galeano_monti_alpha [w=fex]
+sum galeano_monti_alpha if zona==1 [w=fex]
+sum galeano_monti_alpha if zona==2 [w=fex]
+sum galeano_monti_alpha if a_1==1 [w=fex]
+sum galeano_monti_alpha if a_1==2 [w=fex]
+
+*Vulnerabilidad socioeconómica 
+sum a_7 [w=fex]
+sum a_7 if zona==1 [w=fex]
+sum a_7 if zona==2 [w=fex]
+sum a_7 if a_1==1 [w=fex]
+sum a_7 if a_1==2 [w=fex]
+
+*Vulnerabilidad total (índice sumas)
+sum vulnerabilidad1 [w=fex]
+sum vulnerabilidad1 if zona==1 [w=fex]
+sum vulnerabilidad1  if zona==2 [w=fex]
+sum vulnerabilidad1 if a_1==1 [w=fex]
+sum vulnerabilidad1  if a_1==2 [w=fex]
+
+*Vulnerabilidad total (índice generate)
+sum vulnerabilidad1_alpha [w=fex]
+sum vulnerabilidad1_alpha if zona==1 [w=fex]
+sum vulnerabilidad1_alpha if zona==2 [w=fex]
+sum vulnerabilidad1_alpha if a_1==1 [w=fex]
+sum vulnerabilidad1_alpha if a_1==2 [w=fex]
+
+*Índice de vulnerabilizados por la pandemia: si es negativo empeoró la situación (a4-a7)
+sum vulnerabilizados [w=fex]
+sum vulnerabilizados if zona==1 [w=fex]
+sum vulnerabilizados if zona==2 [w=fex]
+sum vulnerabilizados if a_1==1 [w=fex]
+sum vulnerabilizados if a_1==2 [w=fex]
+
+*Respuesta pública (índice sumas)
+sum R_publica [w=fex]
+sum R_publica if zona==1 [w=fex]
+sum R_publica if zona==2 [w=fex]
+
+*Respuesta pública (índice generate)
+sum r_publica_alpha [w=fex]
+sum r_publica_alpha  if zona==1 [w=fex]
+sum r_publica_alpha   if zona==2 [w=fex]
+
+*Respuesta privada 
+sum R_privada [w=fex]
+sum R_privada if zona==1 [w=fex]
+sum R_privada if zona==2 [w=fex]
+
+*Respuesta civil 
+sum R_civil [w=fex]
+sum R_civil if zona==1 [w=fex]
+sum R_civil if zona==2 [w=fex]
 
