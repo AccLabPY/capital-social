@@ -43,31 +43,29 @@ foreach X in `var' {
 	capture recode `X'(2=0)
 }
 
+// Auxiliares para cacular correlaciones entre elementos de este bloque
 gen aux_cf1 = b_1_1+ b_1_2+ b_1_3+ b_1_4+ b_1_5+ b_1_6+ b_1_7 
-
 gen aux_cf2 = (b_2_1+ b_2_2+ b_2_3+ b_2_4+ b_2_5+ b_2_6+ b_2_7)* 2
-
 gen aux_cf4= b_4
 
-/* replace b_3_1=. if b_3_1==0
-
+// We are removing items b_3_1 and b_3_2 from the index given as they need to 
+// to be further revised. 
+/* 
+replace b_3_1=. if b_3_1==0
 xtile b3_1= b_3_1, nq(4)
-
 replace b3_1= 0 if b3_1==.
-
 replace b_3_2=. if b_3_2==0
-
 xtile b3_2= b_3_2, nq(4)
-
 replace b3_2= 0 if b3_2==.
-
 replace b_3=. if b_3==0
-g aux_cf3=b3_1+b3_2*/
+g aux_cf3=b3_1+b3_2
+*/
 
+// Calculando quartiles para la distribución que resulta de las respuestas a B3
+// que se trata de estimar el número aproximado de personas en la red, similares
+// a uno. 
 replace b_3=. if b_3==0
-
 xtile b3_q= b_3, nq(4)
-
 replace b3_q= 0 if b3_q==.
 
 *Índice con sumas
