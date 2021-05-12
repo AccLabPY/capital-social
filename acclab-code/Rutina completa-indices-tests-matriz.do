@@ -1,35 +1,43 @@
-**************Creación de índices agregados Capital Social**************
+/******************************************************************************
+ * CREACIÓN Y ANÁLISIS DE ÍNDICES DE CAPITAL SOCIAL
+ * AccLabPY, PNUD Paraguay, Mayo 2021
+ * (accel.labs.pry@undp.org)
+ * 
+ * Claudia Montanía
+ * Cristhian Parra
+ * Gustavo Setrinig
+ * Mónica Ríos
+ *
+ ******************************************************************************/
+
 cd "../data"
 use "database_final.dta"
 
-/*========================================================================================
- ÍNDICES DE CAPITAL SOCIAL
-   
-==========================================================================================*/
-
-
-/* 1) Puntaje de capital social filial (〖cs〗_filial=[0…30])
-
-a. Sumar 1 punto por cada sí de respuesta a las preguntas B1 y B4 ([0…8]).
-
-b. Sumar 2 puntos por cada sí de respuesta a la pregunta B2 ([0…14]).
-
-c. Sumar puntos en base a la posición de las respuestas B3.1 y B3.2 en relación
-a los 3 cuartiles de la distribución de medidas reportadas a esta pregunta, 
-siguiendo la siguiente tabla guía ([0…8]): 
-
-Valor = 0  -->	0 puntos
-Valor = Q1 -->	1
-Valor = Q2 -->	2
-Valor = Q3 -->	3
-Valor > Q3 -->	4
-
-*/
+/****************************************************************************** 
+ * PUNTAJES DE CAPITAL SOCIAL   
+ ******************************************************************************
+ * 1) Puntaje de capital social filial (〖cs〗_filial=[0…30])
+ *		a. 	Sumar 1 punto por cada SÍ a las preguntas B1 y B4 ([0…8]).
+ *		b. 	Sumar 2 puntos por cada sí de respuesta a la pregunta B2 ([0…14]).
+ *		c. 	Sumar puntos en base a la posición de la respuesta a B3 en relación 
+ *			a los 3 cuartiles de la distribución de medidas reportadas a esta 
+ *			pregunta, siguiendo la siguiente tabla guía ([0…8]): 
+ *
+ *			Valor = 0  -->	0 puntos
+ *			Valor = Q1 -->	1
+ *			Valor = Q2 -->	2
+ *			Valor = Q3 -->	3
+ *			Valor > Q3 -->	4
+ * 
+ * Todas las preguntas de este bloque se refieren a personas similares al 
+ * encuestado
+ ******************************************************************************/
  
-// NOTA: Los valores asignados a "No Responde" (99) Y "No" pasan a (0). 
+local var b_1_1 b_1_2 b_1_3 b_1_4 b_1_5 b_1_6 b_1_7 	// Interacciones casuales 
+local var b_2_1 b_2_2 b_2_3 b_2_4 b_2_5 b_2_6 b_2_7 	// Interacciones de confianza 
+local var b_4											// Apoyo para ayudas 
 
-local var b_1_1 b_1_2 b_1_3 b_1_4 b_1_5 b_1_6 b_1_7 b_2_1 b_2_2 b_2_3 b_2_4 b_2_5 b_2_6 b_2_7 b_4
-
+// Los valores asignados a "No Responde" (99) Y "No" pasan a (0). 
 foreach X in `var' {
 	capture recode `X'(3=0)
 	capture recode `X'(2=0)
