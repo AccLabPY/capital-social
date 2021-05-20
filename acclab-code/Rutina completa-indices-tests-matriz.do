@@ -739,3 +739,24 @@ sum R_civil [w=fex]
 sum R_civil if zona==1 [w=fex]
 sum R_civil if zona==2 [w=fex]
 
+*Commons (índice sumas)
+sum commons [w=fex]
+sum commons if zona==1 [w=fex]
+sum commons if zona==2 [w=fex]
+
+/*========================================================================================
+ Ttest para saber si son significativas las diferencias
+==========================================================================================*/
+ttest cs_filial, by(zona)
+ttest cs_conectivo, by(zona)
+ttest cs_vinculante, by(zona)
+ttest conf_interpersonal, by(zona)
+ttest conf_institucional, by(zona)
+ttest ac_comunitaria, by(zona)
+ttest ac_activos, by(zona)
+ttest ac_demanda, by(zona)
+ttest commons, by(zona)
+ttest r_publica, by(zona)
+ttest r_civil, by(zona)
+ttest r_privada, by(zona)
+ttest vulnerabilidad1, by(zona)
