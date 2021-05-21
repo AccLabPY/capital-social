@@ -45,3 +45,7 @@ data/*
 hotcoldspots/data/
 
 hotcoldspots/shapes/
+
+*.csv
+
+*.nb.html
