@@ -1,0 +1,586 @@
+---
+title: "Hot-spots and Cold-spots"
+subtitle: "Preliminary Analysis"
+author: "Timothy Fraser, Aldrich Resilience Lab, UNDP AccLab Paraguay"
+date: "July 7, 2020"
+output: html_notebook
+---
+
+This document generates maps using spatial interpolation to describe requests for aid and provision of aid in Paraguay during COVID-19.
+
+# 0. Packages and Data
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse) # for data manipulation
+# Geospatial packages
+library(sf)
+library(rgdal)
+library(rgeos)
+library("gstat")
+library("sp")
+library("maptools")
+# Color palletes
+library(viridis)
+library(wesanderson)
+
+# South American Albers Equal Area Conic projection
+# Source: https://spatialreference.org/ref/esri/south-america-albers-equal-area-conic/
+saea <- "+proj=aea +lat_1=-5 +lat_2=-42 +lat_0=-32 +lon_0=-60 +x_0=0 +y_0=0 +ellps=aust_SA +units=m +no_defs"
+
+# Create directory for GIS shape data
+dir.create("shapes")
+
+# Global Administrative Areas dataset from UC Davis
+# https://gadm.org/download_country_v3.html
+#download.file(url = "https://biogeo.ucdavis.edu/data/gadm3.6/Rsp/gadm36_PRY_2_sp.rds",
+#              destfile = "shapes/paraguay_bounds.rds")
+```
+
+
+# 1. Generate key polygons and points
+
+## 1.1 Import Paraguay Polygons
+
+```{r}
+# Generate district level shapefiles for Paraguay
+geo <- read_rds("shapes/paraguay_bounds.rds") %>% 
+  st_as_sf() %>%
+  st_transform(crs = 4326) %>%
+  st_transform(crs = saea) %>%
+  #st_set_crs(saea) %>%
+  dplyr::select(dept = NAME_1, district = NAME_2) %>%
+  group_by(dept, district) %>%
+  summarize(geometry = st_union(geometry)) %>%
+  ungroup() %>%
+  mutate(id = 1:n())
+```
+
+## 1.2 Geocode requests for aid and organziation that provide aid.
+
+```{r}
+# Let's geocode all instances of requests from Ayudapy.org
+read_rds("ayudapy_requests.rds") %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
+  st_transform(crs = saea) %>%
+  # now join in geographic identifier
+  st_join(geo) %>%
+  mutate(id = as.numeric(id)) %>%
+  # and filter to only cases located within Paraguay
+  filter(!is.na(district)) %>%
+  # Now specify an outcome value (1 = presence)
+  mutate(outcome = 1) %>%
+  saveRDS("shapes/ayudapy_points.rds")
+
+# Now let's geocode organizations from ElMapaSocial
+read_csv("/cloud/project/shapes/ong.csv") %>%
+  filter(!is.na(longitud) & !is.na(latitud)) %>%
+  st_as_sf(coords = c("longitud", "latitud"), crs = 4326) %>%
+  st_transform(crs = saea) %>%
+  mutate(id = as.numeric(id)) %>%
+  # and filter to only cases located within Paraguay
+  st_join(geo %>% select(-id)) %>%
+  filter(!is.na(district)) %>%
+  mutate(outcome = 1) %>%
+  saveRDS("shapes/elmapasocial_points.rds")
+
+# Now let's geocode organizations from Ushahide
+read_csv("/cloud/project/shapes/ushahide.csv") %>% 
+  dplyr::select(
+    id = `Post ID`,
+    survey = Survey,
+    longitude = `Ubicación aproximada (si aplica).lon`,
+    latitude = `Ubicación aproximada (si aplica).lat`) %>%
+  mutate(id = as.numeric(id)) %>%
+  filter(!is.na(longitude) & !is.na(latitude)) %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
+  st_transform(crs = saea) %>%
+  st_join(geo %>% select(-id)) %>%
+  filter(!is.na(district)) %>%
+  mutate(outcome = 1) %>%
+  saveRDS("shapes/ushahide_points.rds")
+
+
+# Combine points
+bind_rows(
+  # Ushahide
+  read_rds("shapes/ushahide_points.rds") %>% 
+    mutate(source = "Ushahide",
+           type = "Volunteer Org") %>%
+    dplyr::select(id, outcome, source, type, geometry) %>%
+    mutate(id = as.numeric(id)),
+  # El Mapa Social
+  read_rds("shapes/elmapasocial_points.rds") %>% 
+    dplyr::select(id, is_aprobado, is_donacion, is_voluntariado, is_adoptar) %>%
+    pivot_longer(
+      cols = c(is_aprobado, is_donacion, is_voluntariado, is_adoptar),
+      names_to = "type",
+      values_to = "outcome") %>%
+    mutate(type = type %>% dplyr::recode(
+      "is_aprobado" = "Other Org",
+      "is_adoptar" = "Other Org",
+      "is_donacion" = "Charitable Org",
+      "is_voluntariado" = "Volunteer Org")) %>%
+    distinct() %>%
+    mutate(source = "El Mapa Social") %>%
+    filter(outcome == 1) %>%
+    mutate(id = as.numeric(id)),
+  # Aduyapy Points
+  read_rds("shapes/ayudapy_points.rds") %>% 
+    mutate(source = "Aduyapy",
+           type = "Requests for Assistance",
+           outcome = 1) %>%
+    dplyr::select(id = order, source, type, outcome, geometry) %>%
+    mutate(id = as.numeric(id))
+) %>%
+  mutate(id = 1:n()) %>%
+  mutate(type = type %>% factor(levels = c(
+    "Requests for Assistance", "Volunteer Org", "Charitable Org", "Other Org"))) %>%
+  saveRDS("shapes/points.rds")
+
+#read_rds("shapes/points.rds") %>% head()
+```
+
+
+# 2. Mapping Requests for Aid and Provison of Aid
+
+```{r}
+# Basic visual
+ggplot() +
+  # map polygon boundaries
+  geom_sf(data = geo, mapping = aes(geometry = geometry),
+          fill = "darkgrey", color = "grey") +
+  # map points, specifying type of point by color
+  geom_sf(data = read_rds("shapes/points.rds"),
+          mapping = aes(geometry = geometry,
+                        color = type),
+          alpha = 0.5) +
+    theme_void(base_size = 14) +
+  # use this eye-catching pallete
+  scale_color_manual(values = wesanderson::wes_palette(
+    name = "Zissou1", 4, type = "continuous")) +
+  labs(title = "Requests and Offers of Aid",
+       color = "Type") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## 2.1 Fishnet
+
+Next, let's create a fishnet - a grid that tallies the number of requests per fixed geographic distance.
+
+```{r}
+fishnet <- st_make_grid(
+  st_buffer(
+    geo, 1),
+  # 10 square kilometer grid cells
+  # (unit is meters)
+  cellsize = 10000,
+  what = "polygons") %>%
+  st_as_sf() %>%
+  mutate(id = 1:n()) %>%
+  dplyr::rename(geometry = x) %>%
+  # Now join in the points, and tally how many occur per grid-cell
+  st_join(read_rds("shapes/points.rds") %>% 
+            dplyr::select(outcome, type, geometry)) %>%
+  group_by(id, type) %>%
+  summarize(outcome = sum(outcome, na.rm = TRUE)) %>%
+  ungroup()
+```
+
+
+## 2.2 Visualize Fishnet
+
+
+```{r}
+# Get department and country polygon
+dept <- geo %>%
+  group_by(dept) %>%
+  summarize(geometry = st_union(geometry))
+
+country <- geo %>%
+  summarize(geometry = st_union(geometry))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = fishnet, fill = "white", size = 0.1,
+          alpha = 0.5, color = "black") +
+  geom_sf(data = read_rds("shapes/points.rds"),
+          mapping = aes(geometry = geometry,
+                        color = type),
+          alpha = 0.5) +
+    theme_void(base_size = 16) +
+  geom_sf(data = country, color = "black", fill = NA) +
+  scale_color_manual(
+    values = wesanderson::wes_palette(name = "Zissou1", 4, type = "continuous")) +
+  scale_fill_gradient2(low = "black", high = "grey") +
+ # scale_fill_grey() +
+  theme_void() +
+  guides(fill = guide_colourbar(barwidth = 0.5, barheight = 5)) +
+  labs(color = "Type")
+```
+
+## 2.3 Spatial Interpolation
+
+```{r, message = FALSE, warning = FALSE}
+
+# Make a models for each type
+requests <- gstat(id = "id", formula = outcome ~ 1, 
+            data = fishnet %>% 
+             filter(type == "Requests for Assistance") %>%
+             na.omit() %>%
+             as("Spatial"),
+            set = list(idp = 2))
+
+volunteer <- gstat(id = "id", formula = outcome ~ 1, 
+           data = fishnet %>% 
+             filter(type == "Charitable Org") %>%
+             na.omit() %>%
+             as("Spatial"),
+            set = list(idp = 2))
+
+charitable <- gstat(id = "id", formula = outcome ~ 1, 
+           data = fishnet %>% 
+             filter(type == "Volunteer Org") %>%
+             na.omit() %>%
+             as("Spatial"),
+            set = list(idp = 2))
+
+other <- gstat(id = "id", formula = outcome ~ 1, 
+           data = fishnet %>% 
+             filter(type == "Other Org") %>%
+             na.omit() %>%
+             as("Spatial"),
+            set = list(idp = 2))
+
+# Make a grid of polygons to predict
+nodes <- st_make_grid(
+  st_buffer(
+  geo, 1),
+  cellsize = 10000,
+  what = "polygons")
+
+system.time(
+  # Generate predictions
+  bind_rows(
+    predict(requests, nodes) %>%
+      dplyr::rename(predicted = id.pred) %>%
+      mutate(type = "Requests for Assistance"),
+    
+    predict(volunteer, nodes) %>%
+      dplyr::select(predicted = id.pred) %>%
+      mutate(type = "Volunteer Org"),
+    
+    predict(charitable, nodes) %>%
+      dplyr::select(predicted = id.pred) %>%
+      mutate(type = "Charitable Org"),
+    
+    predict(other, nodes) %>%
+      dplyr::select(predicted = id.pred) %>%
+      mutate(type = "Other Org")) %>%
+    saveRDS("shapes/predictions.rds"))
+
+# Remove excess data upon completion
+remove(nodes, other, volunteer, charitable, requests)
+```
+
+
+```{r}
+
+dept <- geo %>%
+  group_by(dept) %>%
+  summarize(geometry = st_union(geometry))
+
+country <- geo %>%
+  summarize(geometry = st_union(geometry))
+```
+
+## 2.4 Compare predictions vs. actual
+
+```{r}
+ggplot() +
+  # Map predictions in 10-square-kilometer cells
+  geom_sf(data = read_rds("shapes/predictions.rds"), 
+          mapping = aes(fill = log(predicted)), 
+          size = 0.5, color = NA) +
+  # Map points by color to compare predictions vs. actual
+  geom_sf(data = read_rds("shapes/points.rds"), 
+          mapping = aes(color = type),
+          alpha = 0.5) +
+   scale_color_manual(
+    values = wesanderson::wes_palette(name = "Zissou1", 4, type = "continuous")) +
+  scale_fill_gradient(low = "black", high = "white") +
+  # Add border data
+  geom_sf(data = dept, fill = NA, color = "darkgrey") +
+  geom_sf(data = country, fill = NA, color = "black") +
+  theme_void() +
+  facet_wrap(~type) +
+  guides(fill = guide_colorbar(barwidth = 0.5, barheight = 5)) +
+  labs(title = "Predicted Requests for Aid vs. Social Orgs",
+       color = "Type",
+       fill = "Predicted Number (log)")
+```
+
+
+
+```{r}
+# Also, here's a histogram if you want it
+read_rds("shapes/predictions.rds") %>%
+  ggplot(mapping = aes(x = predicted, fill = type)) +
+  geom_histogram() +
+  facet_wrap(~type, scales = "free") +
+  scale_fill_manual(values = wes_palette(name = "Zissou1", n = 4, type = "continuous"))
+```
+
+# 2.5 Get district level average predictions
+
+```{r}
+# Join predictions into shapes,
+# and then summarize them by district
+geo %>%
+  st_join(read_rds("shapes/predictions.rds")) %>% 
+  group_by(district, dept) %>%
+  summarize(avg_predicted = mean(predicted, na.rm = TRUE)) %>%
+  ungroup() %>%
+  saveRDS("shapes/avg_predictions.rds")
+
+# Visualize average predictions per district
+ggplot() +
+  geom_sf(data = read_rds("shapes/avg_predictions.rds"), 
+          mapping = aes(fill = log(avg_predicted)), size = 0.5, color = NA) +
+  geom_sf(data = read_rds("shapes/points.rds"), 
+          mapping = aes(color = type),
+          alpha = 0.5) +
+   scale_color_manual(
+    values = wesanderson::wes_palette(name = "Zissou1", 4, type = "continuous")) +
+  scale_fill_gradient(low = "white", high = "black") +
+  # Add border data
+  geom_sf(data = dept, fill = NA, color = "darkgrey") +
+  geom_sf(data = country, fill = NA, color = "black") +
+  theme_void() +
+  facet_wrap(~type) +
+  labs(title = "Predicted Requests for Aid vs. Social Orgs",
+       color = "Type",
+       fill = "Predicted Number (log)")
+```
+
+
+
+
+# 3. Compare High Vulnerability vs. High Social Resource areas
+
+```{r}
+ggplot() +
+  geom_sf(data = read_rds("shapes/avg_predictions.rds"), 
+          mapping = aes(fill = log(avg_predicted)), size = 0.5, color = NA) +
+  geom_sf(data = read_rds("shapes/points.rds"), 
+          mapping = aes(color = type),
+          alpha = 0.5) +
+   scale_color_manual(
+    values = wesanderson::wes_palette(name = "Zissou1", 4, type = "continuous")) +
+  scale_fill_gradient(low = "white", high = "black") +
+  # Add border data
+  geom_sf(data = dept, fill = NA, color = "darkgrey") +
+  geom_sf(data = country, fill = NA, color = "black") +
+  theme_void() +
+  facet_wrap(~type) +
+  labs(title = "Predicted Requests for Aid vs. Social Orgs",
+       color = "Type",
+       fill = "Predicted Number (log)")
+```
+
+## 3.1 Generate requests and provision indices from 0 to 1
+
+```{r}
+request <-  read_rds("shapes/predictions.rds") %>%
+  group_by(type) %>%
+  mutate(id = 1:n()) %>%  ungroup() %>%
+    filter(type == "Requests for Assistance") %>% 
+    dplyr::select(id, requests = predicted, geometry)
+  
+aid <-  read_rds("shapes/predictions.rds") %>%
+    group_by(type) %>%
+  mutate(id = 1:n()) %>%  ungroup() %>%
+    filter(type != "Requests for Assistance") %>%
+    group_by(id) %>%
+    summarize(predicted = sum(predicted,na.rm = TRUE)) %>%
+    dplyr::select(id, social_orgs = predicted, geometry)
+
+
+dat <- request %>%
+  left_join(by = "id", 
+            y = aid %>% as.data.frame() %>% 
+              select(id, social_orgs, -geometry)) %>%
+  # Convert into index
+  mutate(requests = log(requests) %>% 
+           scales::rescale(to = c(0,1)) %>% as.numeric,
+         social_orgs = log(social_orgs) %>% 
+           scales::rescale(to = c(0,1)) %>% as.numeric) %>%
+  # Find difference in indices
+  mutate(diff = requests - social_orgs)
+
+# If there are more requests than social orgs, 
+# relative to the distribution of both in the country,
+# this means this is a place we would expect is getting underserved
+
+# If the difference is POSITIVE (BLUE),
+# that means there are more requests than social orgs.
+# If the difference is NEGATIVE (RED),
+# that means that there are more social orgs than requests
+
+# Compare difference in requests vs. aid to see hotspots and coldspots
+ggplot() +
+  geom_sf(data = dat, mapping = aes(fill = diff), color = NA) +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue") +
+  theme_void(base_size = 14) +
+  geom_sf(data = dept, fill = NA, color = "grey") +
+  geom_sf(data = country, fill = NA, color = "black") +
+  guides(fill = guide_colourbar(barwidth = 0.5, barheight = 10)) +
+  labs(fill = "Difference in\nRequests\nvs.\nSocial Orgs",
+       caption = "Requests for Aid and Social Orgs were tallied, \n predicted for every 10 square kilometers,\nlog-transformed, and rescaled from 0 to 1.\nSources: Ayudapy.org, ElMapaSocial.org, Py.Mapa.FrenalaCurva.net") +
+  theme(plot.caption = element_text(hjust = 0.5))
+```
+
+# 4. City Specific Mapping
+
+```{r}
+capital <- geo %>%
+  filter(dept == "Asunción")
+
+# Generate a smaller grid for focusing just on the capital
+fishnet <- st_make_grid(
+  st_buffer(
+    capital, 1),
+  # 500 meter grid cells
+  cellsize = 500,
+  what = "polygons") %>%
+  st_as_sf() %>%
+  mutate(id = 1:n()) %>%
+  dplyr::rename(geometry = x) %>%
+  st_join(read_rds("shapes/points.rds") %>% 
+            dplyr::select(outcome, type, geometry)) %>%
+  group_by(id, type) %>%
+  summarize(outcome = sum(outcome, na.rm = TRUE)) %>%
+  ungroup()
+
+# Make a models for each type
+requests <- gstat(id = "id", formula = outcome ~ 1, 
+            data = fishnet %>% 
+             filter(type == "Requests for Assistance") %>%
+             na.omit() %>%
+             as("Spatial"),
+            set = list(idp = 2))
+
+volunteer <- gstat(id = "id", formula = outcome ~ 1, 
+           data = fishnet %>% 
+             filter(type == "Charitable Org") %>%
+             na.omit() %>%
+             as("Spatial"),
+            set = list(idp = 2))
+
+charitable <- gstat(id = "id", formula = outcome ~ 1, 
+           data = fishnet %>% 
+             filter(type == "Volunteer Org") %>%
+             na.omit() %>%
+             as("Spatial"),
+            set = list(idp = 2))
+
+other <- gstat(id = "id", formula = outcome ~ 1, 
+           data = fishnet %>% 
+             filter(type == "Other Org") %>%
+             na.omit() %>%
+             as("Spatial"),
+            set = list(idp = 2))
+
+# Make a grid of polygons to predict
+nodes <- st_make_grid(
+  st_buffer(
+  capital, 1),
+  cellsize = 500,
+  what = "polygons")
+
+system.time(
+  # Generate predictions
+  bind_rows(
+    predict(requests, nodes) %>%
+      dplyr::rename(predicted = id.pred) %>%
+      mutate(type = "Requests for Assistance"),
+    
+    predict(volunteer, nodes) %>%
+      dplyr::select(predicted = id.pred) %>%
+      mutate(type = "Volunteer Org"),
+    
+    predict(charitable, nodes) %>%
+      dplyr::select(predicted = id.pred) %>%
+      mutate(type = "Charitable Org"),
+    
+    predict(other, nodes) %>%
+      dplyr::select(predicted = id.pred) %>%
+      mutate(type = "Other Org")) %>%
+    saveRDS("shapes/predictions_capital.rds"))
+
+request <-  read_rds("shapes/predictions_capital.rds") %>%
+  group_by(type) %>%
+  mutate(id = 1:n()) %>%  ungroup() %>%
+    filter(type == "Requests for Assistance") %>% 
+    dplyr::select(id, requests = predicted, geometry)
+  
+aid <-  read_rds("shapes/predictions_capital.rds") %>%
+    group_by(type) %>%
+  mutate(id = 1:n()) %>%  ungroup() %>%
+    filter(type != "Requests for Assistance") %>%
+    group_by(id) %>%
+    summarize(predicted = sum(predicted,na.rm = TRUE)) %>%
+    dplyr::select(id, social_orgs = predicted, geometry)
+
+
+dat <- request %>%
+  left_join(by = "id", 
+            y = aid %>% as.data.frame() %>% 
+              select(id, social_orgs, -geometry)) %>%
+  # Convert into index
+  mutate(requests = log(requests) %>% 
+           scales::rescale(to = c(0,1)) %>% as.numeric,
+         social_orgs = log(social_orgs) %>% 
+           scales::rescale(to = c(0,1)) %>% as.numeric) %>%
+  # Find difference in indices
+  mutate(diff = requests - social_orgs)
+
+remove(request, aid)
+
+
+# Gather Paraguay streets for a better visual
+
+#download.file(url = "https://github.com/justinelliotmeyers/official_paraguay_administrative_boundary_shapefile/raw/master/paraguay_2012_vias_completo.zip",
+#              destfile = "shapes/capital_streets.zip")
+# unzip("shapes/capital_streets.zip")
+
+read_sf("shapes/capital_streets/paraguay_2012_vias_completo.shp") %>% 
+  st_as_sf() %>%
+  dplyr::select(cartodb_id, geometry) %>%
+  st_transform(crs = 4326) %>%
+  st_transform(crs = saea) %>%
+  st_join(capital) %>%
+  filter(!is.na(district)) %>%
+  saveRDS("shapes/streets.rds")
+
+
+# Visualize difference in aid requests vs. social org density
+ggplot() +
+  # visualize predictions per 500 meter block
+  geom_sf(dat, mapping = aes(geometry= geometry, fill = diff), color = NA) +
+  # Overlay Asuncion streets
+  geom_sf(read_rds("shapes/streets.rds"), mapping = aes(geometry = geometry),
+          color = "black", size = 0.1) +
+  # Overlay border
+  geom_sf(capital, mapping = aes(geometry = geometry), 
+          color = "black", fill = NA) +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue") +
+  theme_void(base_size = 14) +
+  guides(fill = guide_colorbar(barwidth = 0.5, barheight = 10)) +
+  labs(fill = "Difference\nin\nRequests\nvs.\nSocial Orgs")
+```
+
+
+
+
+

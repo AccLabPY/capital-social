@@ -1,0 +1,150 @@
+---
+title: "Webscraping AyudaPY for Paraguay Team"
+subtitle: "Replication Code"
+author: "Timothy Fraser, Aldrich Resilience Lab, UNDP AccLab Paraguay"
+date: "July 7, 2020"
+output: html_notebook
+---
+
+
+```{r}
+# Load packages
+library(tidyverse)
+library(haven)
+library(sf)
+library(haven)
+
+# Currently unnecessary
+
+# First, I uploaded neighborhood geocodes
+#codes <- read_csv("Barrios_Localidades_Paraguay_Codigos_DGEEC.csv", 
+#     locale = locale(encoding = "WINDOWS-1252", asciify = TRUE)) %>%
+#  dplyr::select(code_muni = `Código concatenado`, 
+#                code_dept = `Código de Departamento`,
+#                dept = `Descripción de Departamento`,
+#                code_dist = `Código de Distrito`,
+#                dist = `Descripción de Distrito`,
+#                code_area = `Área`,
+#                code_barr = `Código de Barrio/Localidad`,
+#                barr = `Descripción de Barrio/Localidad`)
+#remove(codes)
+
+# We could use this in the future to tabulate our map data.
+```
+
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(magrittr)
+library(stringr)
+library(xml2)
+library(purrr)
+# ayuda <- read_html("https://ayudapy.org/pedidos")
+
+# Here's an example request
+#"https://ayudapy.org/pedidos/1200"
+
+get_request = function(number){
+  
+    print(paste(number, "complete!"))
+
+  # Grab the html code for the following website
+  ayuda <- read_html(
+    paste("https://ayudapy.org/pedidos/", 
+          number, sep = "")) %>%
+    html_node("body") %>%
+    html_node("main")
+  
+  # Extract title of request
+  header <- ayuda %>%
+    xml_find_all("//p[contains(@class, 'card-header-title')]") %>%
+    html_text()
+  
+  # Extract date of request
+  date <- ayuda %>%
+    xml_find_all("//p[contains(@class, 'has-text-right is-size-7')]") %>%
+    html_text()
+  
+  
+  # Extract description of request
+  request <- ayuda %>%
+    xml_find_all("//p[contains(@class, 'is-size-5')]") %>%
+    html_text()
+  
+  # Extract name and city
+  name <- ayuda %>%
+    xml_find_all("//p[contains(@class, 'title is-4')]") %>%
+    html_text(trim = TRUE) %>%
+    t() %>%
+    as.data.frame() %>%
+    dplyr::select(
+      name = 1,
+      address_verbal = 3,
+      city = 4)
+  
+  # Extract contact info
+  contact <- ayuda %>%
+    xml_find_all("//p[contains(@class, 'title is-4')]") %>%
+    html_children() %>%
+    html_attr("href") %>%
+    t() %>%
+    as.data.frame() %>%
+    dplyr::select(phone = 1,
+                  whatsapp_url = 2)
+  
+  # Get coordinates of address
+  geo <- ayuda %>%
+    #  html_node("section") %>%
+    #  html_node("div") %>%
+    xml_find_all("//a[contains(@href, 'google.com/maps')]") %>%
+    #html_nodes("a") %>% 
+    html_attr("href") %>%
+    # Now get rid of url
+    str_remove(".*&query=") %>%
+    # and split longitude and latitude into separate columns
+    str_split(",", simplify = TRUE) %>% 
+    as.data.frame() %>%
+    dplyr::select(latitude = 1,
+                  longitude = 2)
+  
+  # Bind results together and export
+  bind_cols(name, contact, geo, 
+            data.frame(header = header,
+                       date = date,
+                       request = request)) %>%
+    return()
+}
+
+data.frame(order = 20001:23700) %>%
+  split(.$order) %>%
+  
+  map(.f = possibly(~get_request(.x),
+                    otherwise = NA_character_, quiet = FALSE)) %>%
+    #  https://purrr.tidyverse.org/reference/map.html
+    #  https://purrr.tidyverse.org/reference/safely.html
+  map_dfr(~ as.data.frame(.), .id = "order") %>%
+  saveRDS("ayudapy_requests.rds")
+
+# I had to do this in multiple batches.
+# Took about an hour.
+#dat <- bind_rows(
+#  read_rds("ayudapy_requests.rds"),
+#    read_rds("ayudapy_requests2.rds"),
+#    read_rds("ayudapy_requests3.rds")
+#) %>%
+#  select(-12) %>%
+#  filter(!is.na(name))  
+
+#dat %>% 
+#  saveRDS("ayudapy_requests.rds")
+ 
+# Export to .csv
+read_rds("ayudapy_requests.rds") %>%
+  write_csv("ayudapy_requests.csv")
+```
+
+
+
+
+
