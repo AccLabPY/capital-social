@@ -39,3 +39,9 @@ vignettes/*.pdf
 .Renviron
 
 data/*
+
+*.doc
+
+*.txt
+
+*.tmp

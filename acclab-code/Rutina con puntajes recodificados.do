@@ -39,10 +39,13 @@ local var b_1_1 b_1_2 b_1_3 b_1_4 b_1_5 b_1_6 b_1_7 	// Interacciones casuales
 local var b_2_1 b_2_2 b_2_3 b_2_4 b_2_5 b_2_6 b_2_7 	// Interacciones de confianza 
 local var b_4											// Apoyo para ayudas 
 
-// Los valores asignados a "No Responde" (99) Y "No" pasan a (0). 
+// Los valores asignados a "No Responde" (99) Y "No" pasan a (6). 
 foreach X in `var' {
-	capture recode `X'(3=0)
-	capture recode `X'(2=0)
+	capture recode `X'(3=6)
+	capture recode `X'(2=6)
+	capture recode `X'(1=2)
+	capture recode `X'(6=1)
+	
 }
 
 // Auxiliares para cacular correlaciones entre elementos de este bloque
@@ -254,31 +257,12 @@ alpha aux_cv1 aux_cv2 aux_cv3_pca aux_cv4_pca
    
 ==========================================================================================*/
 
-/* 	Para las preguntas de confianza, se traduce la escala en una de las siguientes opciones, dependiendo de si la pregunta está en sentido negativo o positivo
-
-	Puntaje confianza interpersonal (〖conf〗_interpersonal=[-6…6]) 
-
-a)	Sumar los puntos correspondientes a las respuestas de las preguntas C1, C2 y C3, usando la escala positiva o negativa según se indica en la siguiente tabla.
-
-	Puntaje confianza institucional (〖conf〗_institucional=[-18…18])
-	
-a) Sumar los puntos correspondientes a las respuestas de las preguntas C4, C5, C6, C7, C8, C9, C10, C11, C12, usando la escala positiva o negativa según se indica en la siguiente tabla.
-
-
-*/
-
-//Preguntas negativas
+//Recodificación de 99 (la escala es siempre positiva)
 
 local negativo c_1 c_2 c_4 c_5 c_8 c_11 c_12
 
-foreach a in `negativo' {
-	
-	replace `a' = -2 if `a'==1 
-	replace `a' = -1 if `a'==2 
-	replace `a' = 0 if `a'==3
-	replace `a' = 1 if `a'==4 
-	replace `a' = 2 if `a'==5 
-	replace `a' = 0 if `a'==99 
+foreach a in `negativo' { 
+	replace `a' = 3 if `a'==99 
 	
 label drop `a'
 	}
@@ -288,13 +272,7 @@ label drop `a'
 local positivo c_3 c_6 c_7 c_9 c_10
 
 foreach a in `positivo' {
-	
-	replace `a' = 2 if `a'==1 
-	replace `a' = 1 if `a'==2 
-	replace `a' = 0 if `a'==3
-	replace `a' = -1 if `a'==4 
-	replace `a' = -2 if `a'==5 
-	replace `a' = 0 if `a'==99 
+	replace `a' = 3 if `a'==99 
 	
 label drop `a'
 	}
@@ -746,18 +724,25 @@ ttest R_civil, by(zona)
 ttest R_privada, by(zona)
 ttest vulnerabilidad1, by(zona)
 
-
 /*========================================================================================
- MODELOS
+									PRUEBA 1: con log(x+1)
 ==========================================================================================*/
-gen ac_demandalog=ln(ac_demanda)
-gen ac_comunitarialog= ln(ac_comunitaria)
-gen ac_activoslog= ln(ac_activos)
-gen cs_filialog= ln(cs_filial)
-gen cs_conectivolog= ln(cs_conectivo)
-gen i_cs_filial_conectivo= cs_filial*cs_conectivo
-gen i_demanda_vinculante= ac_demanda*cs_vinculante
-gen i_filial_inter= cs_filial*conf_interpersonal
+gen ac_demandalog = log(ac_demanda+1)
+gen ac_comunitarialog= log(ac_comunitaria+1)
+gen ac_activoslog= log(ac_activos+1)
+gen cs_filialog= log(cs_filial+1)
+gen cs_conectivolog= log(cs_conectivo+1)
+gen cs_vinculantelog= log(cs_vinculante+1)
+gen conf_interpersonalog = log(conf_interpersonal+1)
+gen conf_institucionalog = log(conf_institucional+1)
+gen R_publicalog = log(R_publica+1)
+gen vulnerabilidadlog= log(vulnerabilidad1+1)
+gen commonslog= log(commons+1)
+gen i_cs_filial_conectivo_log= cs_filialog*cs_conectivolog
+gen i_demanda_vinculante_log= ac_demandalog*cs_vinculantelog
+gen i_filial_inter_log= cs_filialog*conf_interpersonalog
+
+
 gen rural= zona
 replace rural=0 if zona==1
 replace rural=1 if zona==2
@@ -768,44 +753,182 @@ rename a_2 edad
 rename a_3 educ
 rename a_7 situ_ocup
 
-
-*Con log (pero dificil está usar esto porque tenemos ceros y negativos)
-*reg ac_demandalog cs_filialog cs_conectivolog producto1log edad educ situ_ocup 
-*outreg2 using estimaciones.doc, replace ctitle(Demandas civicas-CS)
-
 *Acción colectiva para demandas civicas-Capital Social
-asdoc reg ac_demanda i_cs_filial_conectivo educ situ_ocup rural mujeres edad
-*outreg2 using estimaciones.doc, ctitle(CS Demandas civicas O1)
-asdoc reg ac_demanda cs_filial cs_conectivo educ situ_ocup rural mujeres edad
-*outreg2 using estimaciones.doc, ctitle(CS Demandas civicas O2)
+*asdoc reg ac_demandalog i_cs_filial_conectivo_log educ situ_ocup rural mujeres edad
+*reg ac_demandalog i_cs_filial_conectivo_log educ situ_ocup rural mujeres edad, robust
+*outreg2 using estimaciones.doc, replace ctitle (CS Demandas civicas O1)
+*asdoc reg ac_demandalog cs_filialog cs_conectivolog educ situ_ocup rural mujeres edad
+reg ac_demandalog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
+outreg2 using estimaciones1.doc, replace ctitle(CS Demandas civicas O2)
 
 *Demandas civicas+cs_vinculante=respuesta institucional pública
-asdoc reg R_publica i_demanda_vinculante educ situ_ocup rural mujeres
-*outreg2 using estimaciones.doc, ctitle(Demandas civicas-R publica O1)
+*asdoc reg R_publicalog i_demanda_vinculante_log educ situ_ocup rural mujeres
+*reg R_publicalog i_demanda_vinculante_log educ situ_ocup rural mujeres, robust
+*outreg2 using estimaciones.doc, replace ctitle(Demandas civicas-R publica O1)
 
-asdoc reg R_publica ac_demanda cs_vinculante educ situ_ocup rural mujeres
-*outreg2 using estimaciones.doc, ctitle(Demandas civicas-R publica O2)
+*asdoc reg R_publica ac_demandalog cs_vinculantelog educ situ_ocup rural mujeres
+reg R_publica ac_demandalog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
+outreg2 using estimaciones2.doc, replace ctitle(Demandas civicas-R publica O2)
 
 *Respuesta institucional-vulnerabilidad
-asdoc reg vulnerabilidad1 R_publica rural mujeres
-*outreg2 using estimaciones.doc, ctitle(R_publica-vulnerabilidad)
+*asdoc reg vulnerabilidadlog R_publicalog rural mujeres
+reg vulnerabilidadlog R_publicalog educ rural mujeres edad, robust
+outreg2 using estimaciones3.doc, replace ctitle(R_publica-vulnerabilidad)
 
 *Confianza, capital filial y acción comunitaria
-asdoc reg ac_comunitaria i_filial_inter educ rural mujeres edad
-*outreg2 using estimaciones.doc, ctitle(Conf, CS y AC O1)
+*asdoc reg ac_comunitarialog i_filial_inter_log educ rural mujeres edad
+*reg ac_comunitarialog i_filial_inter_log educ rural mujeres edad, robust
+*outreg2 using estimaciones.doc, replace ctitle(Conf, CS y AC O1)
 
-asdoc reg ac_comunitaria cs_filial conf_interpersonal educ rural mujeres edad
-*outreg2 using estimaciones.doc, ctitle(Conf, CS y AC O2)
+*asdoc reg ac_comunitarialog cs_filialog conf_interpersonalog educ rural mujeres edad
+reg ac_comunitarialog cs_filialog conf_interpersonalog educ situ_ocup rural mujeres edad, robust
+outreg2 using estimaciones4.doc, replace ctitle(Conf, CS y AC O2)
 
 *Vulnerabilidad y acción comunitaria
-asdoc reg vulnerabilidad1 ac_comunitaria rural mujeres edad
-*outreg2 using estimaciones.doc, ctitle(AC y vulnerabilidad)
+*asdoc reg vulnerabilidadlog ac_comunitarialog rural mujeres edad
+reg vulnerabilidadlog ac_comunitarialog educ rural mujeres edad, robust
+outreg2 using estimaciones5.doc, replace ctitle(AC y vulnerabilidad)
 
 *Otros modelos
 *Vulnerabilidad y acción comunitaria relacionada a activos colectivos
-asdoc reg vulnerabilidad1 ac_activos educ rural mujeres edad
-*outreg2 using estimaciones.doc, ctitle(AC_commons y vunerabilidad)
+*asdoc reg vulnerabilidadlog ac_activoslog educ rural mujeres edad
+reg vulnerabilidadlog ac_activoslog educ rural mujeres edad, robust
+outreg2 using estimaciones6.doc, replace ctitle(AC_commons y vunerabilidad)
 
 *Vulnerabilidad y acceso a activos colectivos
-asdoc reg vulnerabilidad1 commons educ rural mujeres edad
-*outreg2 using estimaciones.doc, ctitle(Commons y vulnerabilidad)
+*asdoc reg vulnerabilidadlog commonslog educ rural mujeres edad
+reg vulnerabilidadlog commonslog educ rural mujeres edad, robust
+outreg2 using estimaciones7.doc, replace ctitle(Commons y vulnerabilidad)
+
+
+************Nuevos*********************************
+*Confianza institucional, respuesta pública y cs_vinculante
+*asdoc reg conf_institucionalog R_publicalog cs_vinculantelog rural educ edad
+reg conf_institucionalog R_publicalog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
+outreg2 using estimaciones9.doc, replace ctitle(conf_institucional R_publica)
+
+*Acción comunitaria y confianza
+reg ac_demandalog conf_interpersonalog conf_institucionalog cs_conectivolog cs_filialog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
+outreg2 using estimaciones_alternativo_acdemanda.doc, replace ctitle(Demandas civicas)
+shellout using `"estimaciones_alternativo_acdemanda.doc"'
+
+*Acción comunitaria y capital social
+reg ac_comunitarialog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
+outreg2 using alternativo_accomnitaria.doc, replace ctitle(AC COMUNITARIA)
+shellout using `"alternativo_accomnitaria.doc"'
+
+reg ac_comunitarialog conf_interpersonalog conf_institucionalog educ situ_ocup rural mujeres edad, robust
+outreg2 using confianza_accomnitaria.doc, replace ctitle(AC COMUNITARIA)
+
+
+*Respuesta pública y vulnerabilidad
+reg R_publica vulnerabilidadlog ac_demandalog cs_vinculantelog educ rural mujeres edad, robust
+outreg2 using rpublica_vulnerabilidad.doc, replace ctitle(R PUBLICA)
+
+/*========================================================================================
+						PRUEBA 1: con AMA, urbano fuera de AMA y rural
+==========================================================================================*/
+gen region= departamento
+replace region=0 
+replace region=1 if departamento==0  & zona==1
+replace region=1 if departamento==11  & zona==1
+replace region=2 if departamento==1 & zona==1
+replace region=2 if departamento==2 & zona==1
+replace region=2 if departamento==3 & zona==1
+replace region=2 if departamento==6 & zona==1
+replace region=2 if departamento==7 & zona==1
+replace region=2 if departamento==10 & zona==1
+replace region=2 if departamento==12 & zona==1
+replace region=2 if departamento==13 & zona==1
+
+gen ama_urb = departamento
+replace ama_urb=0
+replace ama_urb=1 if departamento==0  & zona==1
+replace ama_urb=1 if departamento==11  & zona==1
+
+gen resto_urb = departamento
+replace resto_urb=0
+replace resto_urb=1 if departamento==1 & zona==1
+replace resto_urb=1 if departamento==2 & zona==1
+replace resto_urb=1 if departamento==3 & zona==1
+replace resto_urb=1 if departamento==6 & zona==1
+replace resto_urb=1 if departamento==7 & zona==1
+replace resto_urb=1 if departamento==10 & zona==1
+replace resto_urb=1 if departamento==12 & zona==1
+replace resto_urb=1 if departamento==13 & zona==1
+
+
+*Acción colectiva para demandas civicas-Capital Social
+*asdoc reg ac_demandalog i_cs_filial_conectivo_log educ situ_ocup rural mujeres edad
+*reg ac_demandalog i_cs_filial_conectivo_log educ situ_ocup rural mujeres edad, robust
+*outreg2 using estimaciones.doc, replace ctitle (CS Demandas civicas O1)
+*asdoc reg ac_demandalog cs_filialog cs_conectivolog educ situ_ocup rural mujeres edad
+reg ac_demandalog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using estimaciones1.doc, replace ctitle(CS Demandas civicas O2)
+
+*Demandas civicas+cs_vinculante=respuesta institucional pública
+*asdoc reg R_publicalog i_demanda_vinculante_log educ situ_ocup rural mujeres
+*reg R_publicalog i_demanda_vinculante_log educ situ_ocup rural mujeres, robust
+*outreg2 using estimaciones.doc, replace ctitle(Demandas civicas-R publica O1)
+
+*asdoc reg R_publica ac_demandalog cs_vinculantelog educ situ_ocup rural mujeres
+reg R_publica ac_demandalog cs_vinculantelog educ situ_ocup region mujeres edad, robust
+outreg2 using estimaciones2.doc, replace ctitle(Demandas civicas-R publica O2)
+
+*Respuesta institucional-vulnerabilidad
+*asdoc reg vulnerabilidadlog R_publicalog rural mujeres
+reg vulnerabilidadlog R_publicalog educ region mujeres edad, robust
+outreg2 using estimaciones3.doc, replace ctitle(R_publica-vulnerabilidad)
+
+*Confianza, capital filial y acción comunitaria
+*asdoc reg ac_comunitarialog i_filial_inter_log educ rural mujeres edad
+*reg ac_comunitarialog i_filial_inter_log educ rural mujeres edad, robust
+*outreg2 using estimaciones.doc, replace ctitle(Conf, CS y AC O1)
+
+*asdoc reg ac_comunitarialog cs_filialog conf_interpersonalog educ rural mujeres edad
+reg ac_comunitarialog cs_filialog conf_interpersonalog educ situ_ocup region mujeres edad, robust
+outreg2 using estimaciones4.doc, replace ctitle(Conf, CS y AC O2)
+
+*Vulnerabilidad y acción comunitaria
+*asdoc reg vulnerabilidadlog ac_comunitarialog rural mujeres edad
+reg vulnerabilidadlog ac_comunitarialog educ region mujeres edad, robust
+outreg2 using estimaciones5.doc, replace ctitle(AC y vulnerabilidad)
+
+*Otros modelos
+*Vulnerabilidad y acción comunitaria relacionada a activos colectivos
+*asdoc reg vulnerabilidadlog ac_activoslog educ rural mujeres edad
+reg vulnerabilidadlog ac_activoslog educ region mujeres edad, robust
+outreg2 using estimaciones6.doc, replace ctitle(AC_commons y vunerabilidad)
+
+*Vulnerabilidad y acceso a activos colectivos
+*asdoc reg vulnerabilidadlog commonslog educ rural mujeres edad
+reg vulnerabilidadlog commonslog educ region mujeres edad, robust
+outreg2 using estimaciones7.doc, replace ctitle(Commons y vulnerabilidad)
+
+
+************Nuevos*********************************
+*Confianza institucional, respuesta pública y cs_vinculante
+*asdoc reg conf_institucionalog R_publicalog cs_vinculantelog rural educ edad
+reg conf_institucionalog R_publicalog cs_vinculantelog educ situ_ocup region mujeres edad, robust
+outreg2 using estimaciones9.doc, replace ctitle(conf_institucional R_publica)
+
+*Acción comunitaria y confianza
+reg ac_demandalog conf_interpersonalog conf_institucionalog cs_conectivolog cs_filialog cs_vinculantelog educ situ_ocup region mujeres edad, robust
+outreg2 using estimaciones_alternativo_acdemanda.doc, replace ctitle(Demandas civicas)
+shellout using `"estimaciones_alternativo_acdemanda.doc"'
+
+*Acción comunitaria y capital social
+reg ac_comunitarialog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup region mujeres edad, robust
+outreg2 using alternativo_accomnitaria.doc, replace ctitle(AC COMUNITARIA)
+shellout using `"alternativo_accomnitaria.doc"'
+
+reg ac_comunitarialog conf_interpersonalog conf_institucionalog educ situ_ocup region mujeres edad, robust
+outreg2 using confianza_accomnitaria.doc, replace ctitle(AC COMUNITARIA)
+
+
+*Respuesta pública y vulnerabilidad
+reg R_publica vulnerabilidadlog ac_demandalog cs_vinculantelog educ region mujeres edad, robust
+outreg2 using rpublica_vulnerabilidad.doc, replace ctitle(R PUBLICA)
+
+
+
