@@ -35,9 +35,7 @@ use "C:\Users\DELL\Dropbox\Claudia y Alberto\PNUD\Social ties\Procesamiento de d
  * encuestado
  ******************************************************************************/
  
-local var b_1_1 b_1_2 b_1_3 b_1_4 b_1_5 b_1_6 b_1_7 	// Interacciones casuales 
-local var b_2_1 b_2_2 b_2_3 b_2_4 b_2_5 b_2_6 b_2_7 	// Interacciones de confianza 
-local var b_4											// Apoyo para ayudas 
+local var b_1_1 b_1_2 b_1_3 b_1_4 b_1_5 b_1_6 b_1_7 b_2_1 b_2_2 b_2_3 b_2_4 b_2_5 b_2_6 b_2_7 b_4											
 
 // Los valores asignados a "No Responde" (99) Y "No" pasan a (0). 
 foreach X in `var' {

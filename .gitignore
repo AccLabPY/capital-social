@@ -40,6 +40,15 @@ vignettes/*.pdf
 
 data/*
 
+*.rds
+
+hotcoldspots/data/
+
+hotcoldspots/shapes/
+
+*.csv
+
+*.nb.html
 *.doc
 
 *.txt
