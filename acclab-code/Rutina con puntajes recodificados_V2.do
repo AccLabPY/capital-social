@@ -514,7 +514,7 @@ g commons= aux_activos1+aux_activos2+aux_activos3
 
 
 /*Hacer una matriz de correlación entre todas las variables que conforman dicho índice (Pearson Chi-square test)*/ 
-**CHEQUEAR UNA MEJOR MANERA DE CALCULAR LA CONSISTENCIA DE ESTE INDICE, POR AHORA ESTÁ EN BASE A LOS AUXILIARES Y NO LAS PREGUNTAS**
+
 
 pwcorr aux_activos1 aux_activos2 aux_activos3, sig star(.05) obs
 
@@ -611,7 +611,7 @@ gen vulnerabilizados= a_4-a_7
  ESTADÍSTICAS DESCRIPTIVAS
 ==========================================================================================*/
 *Sexo
-tab a_1
+tab a_1 [w=fex]
 
 *Edad por sexo
 sum a_2 if a_1==1 [w=fex]
@@ -632,8 +632,7 @@ sum conf_interpersonal conf_institucional if zona==2 [w=fex]
 sum vulnerabilidad_galeano_monti [w=fex]
 sum vulnerabilidad_galeano_monti if zona==1 [w=fex]
 sum vulnerabilidad_galeano_monti if zona==2 [w=fex]
-sum vulnerabilidad_galeano_monti if a_1==1 [w=fex]
-sum vulnerabilidad_galeano_monti if a_1==2 [w=fex]
+
 
 *Vulnerabilidad socioeconómica 
 sum a_7 [w=fex]
@@ -646,15 +645,13 @@ sum a_7 if a_1==2 [w=fex]
 sum vulnerabilidad1 [w=fex]
 sum vulnerabilidad1 if zona==1 [w=fex]
 sum vulnerabilidad1  if zona==2 [w=fex]
-sum vulnerabilidad1 if a_1==1 [w=fex]
-sum vulnerabilidad1  if a_1==2 [w=fex]
+
 
 *Índice de vulnerabilizados por la pandemia: si es negativo empeoró la situación (a4-a7)
 sum vulnerabilizados [w=fex]
 sum vulnerabilizados if zona==1 [w=fex]
 sum vulnerabilizados if zona==2 [w=fex]
-sum vulnerabilizados if a_1==1 [w=fex]
-sum vulnerabilizados if a_1==2 [w=fex]
+
 
 *Respuesta pública (índice sumas)
 sum R_publica [w=fex]
@@ -677,19 +674,10 @@ sum commons if zona==1 [w=fex]
 sum commons if zona==2 [w=fex]
 
 *Acción comunitaria (índice sumas)
-sum ac_comunitaria [w=fex]
-sum ac_comunitaria if zona==1 [w=fex]
-sum ac_comunitaria if zona==2 [w=fex]
+sum ac_comunitaria ac_demanda ac_activos [w=fex]
+sum ac_comunitaria ac_demanda ac_activos if zona==1 [w=fex]
+sum ac_comunitaria ac_demanda ac_activos if zona==2 [w=fex]
 
-*Acción comunitaria para demandas (índice sumas)
-sum ac_demanda [w=fex]
-sum ac_demanda if zona==1 [w=fex]
-sum ac_demanda if zona==2 [w=fex]
-
-*Acción comunitaria_activos colectivos (índice sumas)
-sum ac_activos [w=fex]
-sum ac_activos if zona==1 [w=fex]
-sum ac_activos if zona==2 [w=fex]
 
 /*========================================================================================
  Ttest para saber si son significativas las diferencias
@@ -709,8 +697,10 @@ ttest R_privada, by(zona)
 ttest vulnerabilidad1, by(zona)
 
 /*========================================================================================
-									PRUEBA 1: con log(x+1)
+							Generación de logaritmos de x+1 
 ==========================================================================================*/
+*Se realiza esto debido a que los índices van de [0...x], lo cual dificulta la logaritmización
+
 gen ac_demandalog = log(ac_demanda+1)
 gen ac_comunitarialog= log(ac_comunitaria+1)
 gen ac_activoslog= log(ac_activos+1)
@@ -722,11 +712,8 @@ gen conf_institucionalog = log(conf_institucional+1)
 gen R_publicalog = log(R_publica+1)
 gen vulnerabilidadlog= log(vulnerabilidad1+1)
 gen commonslog= log(commons+1)
-gen i_cs_filial_conectivo_log= cs_filialog*cs_conectivolog
-gen i_demanda_vinculante_log= ac_demandalog*cs_vinculantelog
-gen i_filial_inter_log= cs_filialog*conf_interpersonalog
 
-
+*Las variables de control no están logaritmizadas
 gen rural= zona
 replace rural=0 if zona==1
 replace rural=1 if zona==2
@@ -737,60 +724,98 @@ rename a_2 edad
 rename a_3 educ
 rename a_7 situ_ocup
 
-*Acción colectiva para demandas civicas-Capital Social
+cd "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Results"
+
+/*========================================================================================
+				Determinantes de la acción colectiva para demandas cívicas
+==========================================================================================*/
+*Demandas cívicas y capital social
 reg ac_demandalog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
-outreg2 using estimaciones1.doc, replace ctitle(CS Demandas civicas O2)
+outreg2 using demandas_cs.doc, replace ctitle(Demandas cívicas)
 
-*asdoc reg R_publica ac_demandalog cs_vinculantelog educ situ_ocup rural mujeres
-reg R_publica ac_demandalog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
-outreg2 using estimaciones2.doc, replace ctitle(Demandas civicas-R publica O2)
+*Demandas cívicas y confianza
+reg ac_demandalog conf_interpersonalog conf_institucionalog educ situ_ocup rural mujeres edad, robust
+outreg2 using demandas_confianza.doc, replace ctitle(Demandas cívicas)
 
-*Respuesta institucional-vulnerabilidad
-*asdoc reg vulnerabilidadlog R_publicalog rural mujeres
-reg vulnerabilidadlog R_publicalog educ rural mujeres edad, robust
-outreg2 using estimaciones3.doc, replace ctitle(R_publica-vulnerabilidad)
+/*========================================================================================
+			Determinantes de la acción colectiva para acción comunitaria (autoayuda)
+==========================================================================================*/
+*Autoayuda y capital social
+reg ac_comunitarialog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
+outreg2 using autoayuda_cs.doc, replace ctitle(Autoayuda)
 
-*asdoc reg ac_comunitarialog cs_filialog conf_interpersonalog educ rural mujeres edad
-reg ac_comunitarialog cs_filialog conf_interpersonalog educ situ_ocup rural mujeres edad, robust
-outreg2 using estimaciones4.doc, replace ctitle(Conf, CS y AC O2)
+*Autoayuda y confianza
+reg ac_comunitarialog conf_interpersonalog conf_institucionalog educ situ_ocup rural mujeres edad, robust
+outreg2 using autoayuda_confianza.doc, replace ctitle(Autoayuda)
 
-*Vulnerabilidad y acción comunitaria
-*asdoc reg vulnerabilidadlog ac_comunitarialog rural mujeres edad
+/*========================================================================================
+			Determinantes de la respuesta institucional pública
+==========================================================================================*/
+*Aquí no se incluye situación ocupacional porque está correlacionado con vulnerabilidad por construcción del índice de vulnerabilidad
+reg R_publica vulnerabilidadlog ac_demandalog cs_vinculantelog educ rural mujeres edad, robust
+outreg2 using rpublica_vulnerabilidad.doc, replace ctitle(R publica)
+
+/*========================================================================================
+			Determinantes de la vulnerabilidad
+==========================================================================================*/
+*Vulnerabilidad y autoayuda
 reg vulnerabilidadlog ac_comunitarialog educ rural mujeres edad, robust
-outreg2 using estimaciones5.doc, replace ctitle(AC y vulnerabilidad)
+outreg2 using vulnerabilidad_autoayuda.doc, replace ctitle(Vulnerabilidad)
 
-*Otros modelos
-*Vulnerabilidad y acción comunitaria relacionada a activos colectivos
-*asdoc reg vulnerabilidadlog ac_activoslog educ rural mujeres edad
-reg vulnerabilidadlog ac_activoslog educ rural mujeres edad, robust
-outreg2 using estimaciones6.doc, replace ctitle(AC_commons y vunerabilidad)
+*Vulnerabilidad y demandas cívicas
+reg vulnerabilidadlog ac_demandalog educ rural mujeres edad, robust
+outreg2 using vulnerabilidad_demandas.doc, replace ctitle(Vulnerabilidad)
 
 *Vulnerabilidad y acceso a activos colectivos
-*asdoc reg vulnerabilidadlog commonslog educ rural mujeres edad
 reg vulnerabilidadlog commonslog educ rural mujeres edad, robust
-outreg2 using estimaciones7.doc, replace ctitle(Commons y vulnerabilidad)
+outreg2 using vulerabilidad_commons.doc, replace ctitle(Vulnerabilidad)
+
+*Vulnerabilidad y participación comunitaria relacionada a activos colectivos
+reg vulnerabilidadlog ac_activoslog educ rural mujeres edad, robust
+outreg2 using vulnerabilidad_accommons.doc, replace ctitle(Vulnerabilidad)
 
 
-************Nuevos*********************************
-*Confianza institucional, respuesta pública y cs_vinculante
-*asdoc reg conf_institucionalog R_publicalog cs_vinculantelog rural educ edad
-reg conf_institucionalog R_publicalog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
-outreg2 using estimaciones9.doc, replace ctitle(conf_institucional R_publica)
+/*========================================================================================
+			Determinantes del acceso a activos colectivos
+==========================================================================================*/
+*Commons y capital social
+reg commons cs_filial cs_conectivo cs_vinculante educ situ_ocup rural mujeres edad, robust
+outreg2 using commons_cs.doc, replace ctitle(Commons)
 
-*Acción comunitaria y confianza
-reg ac_demandalog conf_interpersonalog conf_institucionalog cs_conectivolog cs_filialog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
-outreg2 using estimaciones_alternativo_acdemanda.doc, replace ctitle(Demandas civicas)
+*Commons y confianza
+reg commons conf_interpersonal conf_institucional educ situ_ocup rural mujeres edad, robust
+outreg2 using commons_confianza.doc, replace ctitle(Commons)
 
-*Acción comunitaria y capital social
-reg ac_comunitarialog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup rural mujeres edad, robust
-outreg2 using alternativo_accomnitaria.doc, replace ctitle(AC COMUNITARIA)
 
-reg ac_comunitarialog conf_interpersonalog conf_institucionalog educ situ_ocup rural mujeres edad, robust
-outreg2 using confianza_accomnitaria.doc, replace ctitle(AC COMUNITARIA)
+/*========================================================================================
+			Determinantes de la participación comunitaria asociada a activos colectivos
+==========================================================================================*/
+*Participación y capital social
+reg ac_activos cs_filial cs_conectivo cs_vinculante educ situ_ocup rural mujeres edad, robust
+outreg2 using participacion_cs.doc, replace ctitle(Participación asociada a activos colectivos)
 
-*Respuesta pública y vulnerabilidad
-reg R_publica vulnerabilidadlog ac_demandalog cs_vinculantelog educ rural mujeres edad, robust
-outreg2 using rpublica_vulnerabilidad.doc, replace ctitle(R PUBLICA)
+*Participación y confianza
+reg ac_activos conf_interpersonal conf_institucional educ situ_ocup rural mujeres edad, robust
+outreg2 using participacion_confianza.doc, replace ctitle(Participación asociada a activos colectivos)
+
+/*========================================================================================
+			Otros modelos
+==========================================================================================*/
+*Acceso a activos colectivos en función a la vulnerabilidad
+reg commons vulnerabilidad1 educ rural mujeres edad, robust
+outreg2 using commons_vulnerabilidad.doc, replace ctitle(Commons)
+
+*Capital social en función a la vunerabilidad
+reg cs_filial vulnerabilidad1 educ rural mujeres edad, robust
+outreg2 using commons_filial.doc, replace ctitle(Cs_filial)
+
+reg cs_conectivo vulnerabilidad1 educ rural mujeres edad, robust
+outreg2 using commons_conectivo.doc, replace ctitle(Cs_conectivo)
+
+reg cs_vinculante vulnerabilidad1 educ rural mujeres edad, robust
+outreg2 using commons_vinculante.doc, replace ctitle(Cs_vinculante)
+
+cd "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Results con AMA"
 
 /*========================================================================================
 						PRUEBA 1: con AMA, urbano fuera de AMA y rural
@@ -825,63 +850,93 @@ replace resto_urb=1 if departamento==12 & zona==1
 replace resto_urb=1 if departamento==13 & zona==1
 
 
-*Acción colectiva para demandas civicas-Capital Social
+/*========================================================================================
+				Determinantes de la acción colectiva para demandas cívicas
+==========================================================================================*/
+*Demandas cívicas y capital social
 reg ac_demandalog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
-outreg2 using estimaciones1.doc, replace ctitle(CS Demandas civicas O2)
+outreg2 using demandas_cs.doc, replace ctitle(Demandas cívicas)
 
-*asdoc reg R_publica ac_demandalog cs_vinculantelog educ situ_ocup rural mujeres
-reg R_publica ac_demandalog cs_vinculantelog educ situ_ocup region mujeres edad, robust
-outreg2 using estimaciones2.doc, replace ctitle(Demandas civicas-R publica O2)
+*Demandas cívicas y confianza
+reg ac_demandalog conf_interpersonalog conf_institucionalog educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using demandas_confianza.doc, replace ctitle(Demandas cívicas)
 
-*Respuesta institucional-vulnerabilidad
-*asdoc reg vulnerabilidadlog R_publicalog rural mujeres
-reg vulnerabilidadlog R_publicalog educ region mujeres edad, robust
-outreg2 using estimaciones3.doc, replace ctitle(R_publica-vulnerabilidad)
+/*========================================================================================
+			Determinantes de la acción colectiva para acción comunitaria (autoayuda)
+==========================================================================================*/
+*Autoayuda y capital social
+reg ac_comunitarialog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using autoayuda_cs.doc, replace ctitle(Autoayuda)
 
-*asdoc reg ac_comunitarialog cs_filialog conf_interpersonalog educ rural mujeres edad
-reg ac_comunitarialog cs_filialog conf_interpersonalog educ situ_ocup region mujeres edad, robust
-outreg2 using estimaciones4.doc, replace ctitle(Conf, CS y AC O2)
+*Autoayuda y confianza
+reg ac_comunitarialog conf_interpersonalog conf_institucionalog educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using autoayuda_confianza.doc, replace ctitle(Autoayuda)
 
-*Vulnerabilidad y acción comunitaria
-*asdoc reg vulnerabilidadlog ac_comunitarialog rural mujeres edad
-reg vulnerabilidadlog ac_comunitarialog educ region mujeres edad, robust
-outreg2 using estimaciones5.doc, replace ctitle(AC y vulnerabilidad)
+/*========================================================================================
+			Determinantes de la respuesta institucional pública
+==========================================================================================*/
+*Aquí no se incluye situación ocupacional porque está correlacionado con vulnerabilidad por construcción del índice de vulnerabilidad
+reg R_publica vulnerabilidadlog ac_demandalog cs_vinculantelog educ rural resto_urb ama_urb mujeres edad, robust
+outreg2 using rpublica_vulnerabilidad.doc, replace ctitle(R publica)
 
-*Otros modelos
-*Vulnerabilidad y acción comunitaria relacionada a activos colectivos
-*asdoc reg vulnerabilidadlog ac_activoslog educ rural mujeres edad
-reg vulnerabilidadlog ac_activoslog educ region mujeres edad, robust
-outreg2 using estimaciones6.doc, replace ctitle(AC_commons y vunerabilidad)
+/*========================================================================================
+			Determinantes de la vulnerabilidad
+==========================================================================================*/
+*Vulnerabilidad y autoayuda
+reg vulnerabilidadlog ac_comunitarialog educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using vulnerabilidad_autoayuda.doc, replace ctitle(Vulnerabilidad)
+
+*Vulnerabilidad y demandas cívicas
+reg vulnerabilidadlog ac_demandalog educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using vulnerabilidad_demandas.doc, replace ctitle(Vulnerabilidad)
 
 *Vulnerabilidad y acceso a activos colectivos
-*asdoc reg vulnerabilidadlog commonslog educ rural mujeres edad
-reg vulnerabilidadlog commonslog educ region mujeres edad, robust
-outreg2 using estimaciones7.doc, replace ctitle(Commons y vulnerabilidad)
+reg vulnerabilidadlog commonslog educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using vulerabilidad_commons.doc, replace ctitle(Vulnerabilidad)
+
+*Vulnerabilidad y participación comunitaria relacionada a activos colectivos
+reg vulnerabilidadlog ac_activoslog educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using vulnerabilidad_accommons.doc, replace ctitle(Vulnerabilidad)
 
 
-************Nuevos*********************************
-*Confianza institucional, respuesta pública y cs_vinculante
-*asdoc reg conf_institucionalog R_publicalog cs_vinculantelog rural educ edad
-reg conf_institucionalog R_publicalog cs_vinculantelog educ situ_ocup region mujeres edad, robust
-outreg2 using estimaciones9.doc, replace ctitle(conf_institucional R_publica)
+/*========================================================================================
+			Determinantes del acceso a activos colectivos
+==========================================================================================*/
+*Commons y capital social
+reg commons cs_filial cs_vinculante cs_conectivo educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using commons_cs.doc, replace ctitle(Commons)
 
-*Acción comunitaria y confianza
-reg ac_demandalog conf_interpersonalog conf_institucionalog cs_conectivolog cs_filialog cs_vinculantelog educ situ_ocup region mujeres edad, robust
-outreg2 using estimaciones_alternativo_acdemanda.doc, replace ctitle(Demandas civicas)
-shellout using `"estimaciones_alternativo_acdemanda.doc"'
+reg commons conf_interpersonal conf_institucional educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using commons_confianza.doc, replace ctitle(Commons)
 
-*Acción comunitaria y capital social
-reg ac_comunitarialog cs_filialog cs_conectivolog cs_vinculantelog educ situ_ocup region mujeres edad, robust
-outreg2 using alternativo_accomnitaria.doc, replace ctitle(AC COMUNITARIA)
-shellout using `"alternativo_accomnitaria.doc"'
+/*========================================================================================
+			Determinantes de la participación comunitaria asociada a activos colectivos
+==========================================================================================*/
+*Participación y capital social
+reg ac_activos cs_filial cs_vinculante cs_conectivo educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using participacion_cs.doc, replace ctitle(Participación asociada a activos colectivos)
 
-reg ac_comunitarialog conf_interpersonalog conf_institucionalog educ situ_ocup region mujeres edad, robust
-outreg2 using confianza_accomnitaria.doc, replace ctitle(AC COMUNITARIA)
+*Participación y capital social
+reg ac_activos conf_interpersonal conf_institucional educ situ_ocup rural resto_urb ama_urb mujeres edad, robust
+outreg2 using participacion_confianza.doc, replace ctitle(Participación asociada a activos colectivos)
 
+/*========================================================================================
+			Otros modelos
+==========================================================================================*/
+*Acceso a activos colectivos en función a la vulnerabilidad
+reg commons vulnerabilidad1 educ rural resto_urb ama_urb mujeres edad, robust
+outreg2 using commons_vulnerabilidad.doc, replace ctitle(Commons)
 
-*Respuesta pública y vulnerabilidad
-reg R_publica vulnerabilidadlog ac_demandalog cs_vinculantelog educ region mujeres edad, robust
-outreg2 using rpublica_vulnerabilidad.doc, replace ctitle(R PUBLICA)
+*Capital social en función a la vunerabilidad
+reg cs_filial vulnerabilidad1 educ rural resto_urb ama_urb mujeres edad, robust
+outreg2 using commons_filial.doc, replace ctitle(Cs_filial)
+
+reg cs_conectivo vulnerabilidad1 educ rural resto_urb ama_urb mujeres edad, robust
+outreg2 using commons_conectivo.doc, replace ctitle(Cs_conectivo)
+
+reg cs_vinculante vulnerabilidad1 educ rural resto_urb ama_urb mujeres edad, robust
+outreg2 using commons_vinculante.doc, replace ctitle(Cs_conectivo)
+
 
 
 
