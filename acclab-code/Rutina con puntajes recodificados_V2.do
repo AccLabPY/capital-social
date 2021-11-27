@@ -10,10 +10,10 @@
  *
  ******************************************************************************/
 
-*cd "../data"
-*use "database_final.dta"
-cd "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Databases"
-use "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Databases\database_final"
+cd "../data"
+use "database_final.dta"
+// cd "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Databases"
+// use "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Databases\database_final"
 
 /****************************************************************************** 
  * PUNTAJES DE CAPITAL SOCIAL   
@@ -724,7 +724,7 @@ rename a_2 edad
 rename a_3 educ
 rename a_7 situ_ocup
 
-cd "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Results"
+cd "../results"
 
 /*========================================================================================
 				Determinantes de la acción colectiva para demandas cívicas
@@ -815,7 +815,7 @@ outreg2 using commons_conectivo.doc, replace ctitle(Cs_conectivo)
 reg cs_vinculante vulnerabilidad1 educ rural mujeres edad, robust
 outreg2 using commons_vinculante.doc, replace ctitle(Cs_vinculante)
 
-cd "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Results con AMA"
+cd "../results-ama"
 
 /*========================================================================================
 						PRUEBA 1: con AMA, urbano fuera de AMA y rural
