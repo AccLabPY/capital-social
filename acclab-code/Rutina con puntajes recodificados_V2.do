@@ -12,8 +12,9 @@
 
 cd "../data"
 use "database_final.dta"
-// cd "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Databases"
-// use "C:\Users\DELL\United Nations Development Programme\AccLab PNUD Paraguay - Documentos\Projects\Capital Social\07 Data Analysis\Databases\database_final"
+
+// Packages or function we need to use
+ssc inst outreg2
 
 /****************************************************************************** 
  * PUNTAJES DE CAPITAL SOCIAL   
